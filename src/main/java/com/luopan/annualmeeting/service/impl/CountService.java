@@ -1,0 +1,56 @@
+package com.luopan.annualmeeting.service.impl;
+
+import com.luopan.annualmeeting.common.Constant.RedisKey;
+import com.luopan.annualmeeting.common.RespMsg;
+import com.luopan.annualmeeting.config.CommConfig;
+import com.luopan.annualmeeting.dao.MessageDao;
+import com.luopan.annualmeeting.dao.PersonDao;
+import com.luopan.annualmeeting.entity.vo.CountVO;
+import com.luopan.annualmeeting.service.ICountService;
+import com.luopan.annualmeeting.util.RedisUtil;
+import com.luopan.annualmeeting.util.ResultUtil;
+import com.luopan.annualmeeting.util.Tools;
+import java.util.Date;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class CountService implements ICountService {
+
+  @Autowired
+  private PersonDao personDao;
+
+  @Autowired
+  private MessageDao messageDao;
+
+  @Autowired
+  private RedisUtil redisUtil;
+
+  @Autowired
+  private CommConfig commConfig;
+
+  @Override
+  public RespMsg total() {
+    long signNum = personDao.countAll();
+    long messageNum = messageDao.countAll();
+    int taskInterval = Tools
+        .getInt(redisUtil.getString(RedisKey.MESSAGE_TASK_INTERVAL),
+            commConfig.getMessageTaskInterval());
+    int taskMessageNum = Tools
+        .getInt(redisUtil.getString(RedisKey.MESSAGE_TASK_NUM), commConfig.getMessageTaskNum());
+    int personVoteNum = Tools
+        .getInt(redisUtil.getString(RedisKey.PERSON_VOTE_NUM), commConfig.getPersonVoteNum());
+    Date voteStartTime = (Date) redisUtil.get(RedisKey.VOTE_START_TIME);
+    Date voteEndTime = (Date) redisUtil.get(RedisKey.VOTE_END_TIME);
+    CountVO countVO = new CountVO();
+    countVO.setVoteStartTime(voteStartTime);
+    countVO.setVoteEndTime(voteEndTime);
+    countVO.setTaskMessageNum(taskMessageNum);
+    countVO.setTaskInterval(taskInterval);
+    countVO.setSignNum(signNum);
+    countVO.setPersonVoteNum(personVoteNum);
+    countVO.setMessageNum(messageNum);
+    return ResultUtil.success(countVO);
+  }
+
+}

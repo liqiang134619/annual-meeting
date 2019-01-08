@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.luopan.annualmeeting.dao.MessageDao">
+
+  <resultMap id="BaseResultMap" type="com.luopan.annualmeeting.entity.Message">
+    <id property="id" column="ID" jdbcType="BIGINT"/>
+    <result property="message" column="MESSAGE" jdbcType="VARCHAR"/>
+    <result property="personId" column="PERSON_ID" jdbcType="BIGINT"/>
+    <result property="checkStatus" column="CHECK_STATUS" jdbcType="INTEGER"/>
+    <result property="checkTime" column="CHECK_TIME" jdbcType="TIMESTAMP"/>
+    <result property="isTop" column="is_top" jdbcType="INTEGER"/>
+    <result property="topTime" column="TOP_TIME" jdbcType="TIMESTAMP"/>
+    <result property="createTime" column="CREATE_TIME" jdbcType="TIMESTAMP"/>
+    <result property="updateTime" column="UPDATE_TIME" jdbcType="TIMESTAMP"/>
+    <result property="status" column="STATUS" jdbcType="INTEGER"/>
+  </resultMap>
+
+  <resultMap id="MessageVO" type="com.luopan.annualmeeting.entity.vo.MessageVO">
+    <id property="id" column="ID" jdbcType="BIGINT"/>
+    <result property="message" column="MESSAGE" jdbcType="VARCHAR"/>
+    <result property="pubTime" column="PUB_TIME" jdbcType="TIMESTAMP"/>
+    <result property="name" column="NAME" jdbcType="VARCHAR"/>
+    <result property="nickname" column="NICKNAME" jdbcType="VARCHAR"/>
+    <result property="avatarUrl" column="AVATAR_URL" jdbcType="VARCHAR"/>
+    <result property="isTop" column="IS_TOP" jdbcType="INTEGER"/>
+  </resultMap>
+
+  <resultMap id="MessageManageVO" type="com.luopan.annualmeeting.entity.vo.MessageManageVO">
+    <id property="id" column="ID" jdbcType="BIGINT"/>
+    <result property="message" column="MESSAGE" jdbcType="VARCHAR"/>
+    <result property="pubTime" column="PUB_TIME" jdbcType="TIMESTAMP"/>
+    <result property="name" column="NAME" jdbcType="VARCHAR"/>
+    <result property="nickname" column="NICKNAME" jdbcType="VARCHAR"/>
+    <result property="avatarUrl" column="AVATAR_URL" jdbcType="VARCHAR"/>
+    <result property="checkStatus" column="CHECK_STATUS" jdbcType="INTEGER"/>
+    <result property="isTop" column="IS_TOP" jdbcType="INTEGER"/>
+  </resultMap>
+
+  <sql id="BaseSql">
+    id, message, person_id, check_status, check_time, is_top, top_time, create_time
+  </sql>
+
+  <insert id="insert" parameterType="praise">
+    insert into message(message, person_id, check_status, check_time, is_top, top_time,
+    create_time, update_time, status)
+    values (#{message}, #{personId}, #{checkStatus}, #{checkTime}, #{isTop}, #{topTime},
+    #{createTime}, #{updateTime}, #{status})
+  </insert>
+
+  <select id="findSendMessages" resultMap="MessageVO" parameterType="long">
+    select m.id, m.message, m.create_time as pub_time, m.is_top, p.name, p.nickname, p.avatar_url
+    from message m
+    left join person p on m.person_id = p.id
+    where m.status = 1 and p.status = 1 and
+    m.id in
+    <foreach collection="list" item="id" open="(" close=")" separator=",">
+      #{id}
+    </foreach>
+    order by
+    m.top_time desc, m.check_time desc
+  </select>
+
+  <select id="countAll" resultType="long">
+    select count(id)
+    from message
+    where status = 1
+  </select>
+
+  <select id="search" parameterType="messageSearchVO" resultMap="MessageManageVO">
+    select m.id, m.message, m.create_time as pub_time, m.check_status, m.is_top,
+    p.name, p.nickname, p.avatar_url
+    from message m
+    left join person p on m.person_id = p.id
+    where p.status = 1 and m.status = 1
+    <if test="personName != null and personName != ''">
+      and locate(#{personName}, p.name) > 0
+    </if>
+    <if test="startTime != null">
+      and m.create_time &gt;= #{startTime}
+    </if>
+    <if test="endTime != null">
+      and m.create_time &lt;= #{endTime}
+    </if>
+    <if test="checkStatus != null">
+      and m.check_status = #{checkStatus}
+    </if>
+    order by m.create_time desc
+  </select>
+  
+  <select id="findById" parameterType="long" resultMap="BaseResultMap">
+    select <include refid="BaseSql"/>
+    from message
+    where id = #{id} and status = 1
+  </select>
+  
+  <update id="updateSelective" parameterType="message">
+    update message
+    <set>
+      <if test="message != null">
+        message = #{message},
+      </if>
+      <if test="checkStatus != null">
+        check_status = #{checkStatus},
+      </if>
+      <if test="checkTime != null">
+        check_time = #{checkTime},
+      </if>
+      <if test="isTop != null">
+        is_top = #{isTop},
+      </if>
+      <if test="topTime != null">
+        top_time = #{topTime},
+      </if>
+      <if test="updateTime != null">
+        update_time = #{updateTime},
+      </if>
+      <if test="status != null">
+        status = #{status},
+      </if>
+    </set>
+    where id = #{id}
+  </update>
+
+</mapper>

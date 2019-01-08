@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.luopan.annualmeeting.dao.RewardDao">
+
+  <resultMap id="BaseResultMap" type="com.luopan.annualmeeting.entity.Reward">
+    <id property="id" column="ID" jdbcType="BIGINT"/>
+    <result property="name" column="NAME" jdbcType="VARCHAR"/>
+    <result property="level" column="LEVEL" jdbcType="INTEGER"/>
+    <result property="amount" column="AMOUNT" jdbcType="INTEGER"/>
+    <result property="imageUrl" column="IMAGE_URL" jdbcType="VARCHAR"/>
+    <result property="createTime" column="CREATE_TIME" jdbcType="TIMESTAMP"/>
+    <result property="updateTime" column="UPDATE_TIME" jdbcType="TIMESTAMP"/>
+    <result property="status" column="STATUS" jdbcType="INTEGER"/>
+  </resultMap>
+
+  <sql id="BaseSql">
+    ID, NAME, LEVEL, AMOUNT, IMAGE_URL
+  </sql>
+
+  <insert id="insert" parameterType="reward">
+    INSERT INTO reward(NAME, LEVEL, AMOUNT, IMAGE_URL, CREATE_TIME, UPDATE_TIME, STATUS)
+    VALUES (#{name}, #{level}, #{amount}, #{imageUrl}, #{createTime}, #{updateTime}, #{status})
+  </insert>
+
+  <select id="findAll" resultMap="BaseResultMap">
+    SELECT <include refid="BaseSql"/>
+    FROM reward
+    WHERE status = 1 AND level > 0
+    ORDER BY level
+  </select>
+
+  <select id="findById" resultMap="BaseResultMap" parameterType="long">
+    SELECT <include refid="BaseSql"/>
+    FROM reward
+    WHERE id = #{id}
+  </select>
+
+  <select id="findNotLottery" resultMap="BaseResultMap">
+    select <include refid="BaseSql"/>
+    from reward r
+    where level > 0 and not exists (
+    select 1 from lottery l where r.id = l.reward_id
+    )
+  </select>
+
+</mapper>

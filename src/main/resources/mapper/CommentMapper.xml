@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.luopan.annualmeeting.dao.CommentDao">
+
+  <resultMap id="BaseResultMap" type="com.luopan.annualmeeting.entity.Comment">
+    <id property="id" column="ID" jdbcType="BIGINT"/>
+    <id property="comment" column="COMMENT" jdbcType="VARCHAR"/>
+    <result property="showId" column="SHOW_ID" jdbcType="BIGINT"/>
+    <result property="personId" column="PERSON_ID" jdbcType="BIGINT"/>
+    <result property="createTime" column="CREATE_TIME" jdbcType="TIMESTAMP"/>
+    <result property="updateTime" column="UPDATE_TIME" jdbcType="TIMESTAMP"/>
+    <result property="status" column="STATUS" jdbcType="INTEGER"/>
+  </resultMap>
+
+  <resultMap id="CommentPersonVO" type="com.luopan.annualmeeting.entity.vo.CommentPersonVO">
+    <id property="comment" column="COMMENT" jdbcType="VARCHAR"/>
+    <id property="name" column="NAME" jdbcType="VARCHAR"/>
+    <id property="nickname" column="NICKNAME" jdbcType="VARCHAR"/>
+    <id property="avatarUrl" column="AVATAR_URL" jdbcType="VARCHAR"/>
+    <id property="commentTime" column="COMMENT_TIME" jdbcType="TIMESTAMP"/>
+  </resultMap>
+
+  <sql id="BaseSql">
+    id, comment, show_id, person_id
+  </sql>
+
+  <insert id="insert" parameterType="comment">
+    insert into comment(comment, show_id, person_id, create_time, update_time, status)
+    values (#{comment}, #{showId}, #{personId}, #{createTime}, #{updateTime}, #{status})
+  </insert>
+
+  <select id="findByShowId" parameterType="long" resultMap="CommentPersonVO">
+    select c.comment, c.create_time as comment_time,
+    p.name, p.avatar_url, p.nickname
+    from comment c
+    left join person p on p.id = c.person_id
+    where c.status = 1 and p.status = 1 and
+    c.person_id = #{personId}
+    order by c.create_time desc
+  </select>
+
+</mapper>

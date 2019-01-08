@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.luopan.annualmeeting.dao.UserDao">
+
+  <resultMap id="BaseResultMap" type="com.luopan.annualmeeting.entity.User">
+    <id property="id" column="ID" jdbcType="BIGINT"/>
+    <result property="username" column="USERNAME" jdbcType="VARCHAR"/>
+    <result property="password" column="PASSWORD" jdbcType="VARCHAR"/>
+    <result property="role" column="ROLE" jdbcType="VARCHAR"/>
+    <result property="createTime" column="CREATE_TIME" jdbcType="TIMESTAMP"/>
+    <result property="updateTime" column="UPDATE_TIME" jdbcType="TIMESTAMP"/>
+    <result property="status" column="STATUS" jdbcType="INTEGER"/>
+  </resultMap>
+
+  <sql id="BaseSql">
+    id, username, role
+  </sql>
+
+  <select id="findByUsernameAndPassword" parameterType="string" resultMap="BaseResultMap">
+    select <include refid="BaseSql"/>
+    from user
+    where username = #{username} and
+    password = #{password} and
+    status = 1
+  </select>
+
+
+</mapper>

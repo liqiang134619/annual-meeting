@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.luopan.annualmeeting.dao.ShowScoreDao">
+
+  <resultMap id="BaseResultMap" type="com.luopan.annualmeeting.entity.ShowScore">
+    <id property="id" column="ID" jdbcType="BIGINT"/>
+    <id property="score" column="SCORE" jdbcType="INTEGER"/>
+    <result property="showId" column="SHOW_ID" jdbcType="BIGINT"/>
+    <result property="personId" column="PERSON_ID" jdbcType="BIGINT"/>
+    <result property="createTime" column="CREATE_TIME" jdbcType="TIMESTAMP"/>
+    <result property="updateTime" column="UPDATE_TIME" jdbcType="TIMESTAMP"/>
+    <result property="status" column="STATUS" jdbcType="INTEGER"/>
+  </resultMap>
+
+  <sql id="BaseSql">
+    id, score, show_id, person_id
+  </sql>
+
+  <insert id="insert" parameterType="showScore">
+    insert into show_score(score, show_id, person_id, create_time, update_time, status)
+    values (#{score}, #{showId}, #{personId}, #{createTime}, #{updateTime}, #{status})
+  </insert>
+
+  <select id="findByPersonId" parameterType="long" resultMap="BaseResultMap">
+    select score, show_id
+    from show_score
+    where status = 1 and
+    person_id = #{personId}
+  </select>
+
+  <select id="count" parameterType="long" resultType="int">
+    select count(id)
+    from show_score
+    where status = 1 and
+    person_id = #{personId} and
+    show_id = #{showId}
+  </select>
+
+</mapper>

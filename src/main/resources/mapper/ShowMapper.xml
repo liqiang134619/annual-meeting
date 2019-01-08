@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.luopan.annualmeeting.dao.ShowDao">
+
+  <resultMap id="BaseResultMap" type="com.luopan.annualmeeting.entity.Show">
+    <id property="id" column="ID" jdbcType="BIGINT"/>
+    <result property="name" column="NAME" jdbcType="VARCHAR"/>
+    <result property="department" column="DEPARTMENT" jdbcType="VARCHAR"/>
+    <result property="performer" column="PERFORMER" jdbcType="VARCHAR"/>
+    <result property="type" column="TYPE" jdbcType="VARCHAR"/>
+    <result property="orderNum" column="ORDER_NUM" jdbcType="INTEGER"/>
+    <result property="createTime" column="CREATE_TIME" jdbcType="TIMESTAMP"/>
+    <result property="updateTime" column="UPDATE_TIME" jdbcType="TIMESTAMP"/>
+    <result property="status" column="STATUS" jdbcType="INTEGER"/>
+  </resultMap>
+
+  <resultMap id="ShowScorePraiseCommentVO" type="com.luopan.annualmeeting.entity.vo.ShowScorePraiseCommentVO">
+    <id property="id" column="ID" jdbcType="BIGINT"/>
+    <result property="name" column="NAME" jdbcType="VARCHAR"/>
+    <result property="department" column="DEPARTMENT" jdbcType="VARCHAR"/>
+    <result property="performer" column="PERFORMER" jdbcType="VARCHAR"/>
+    <result property="type" column="TYPE" jdbcType="VARCHAR"/>
+    <result property="orderNum" column="ORDER_NUM" jdbcType="INTEGER"/>
+    <result property="praiseNum" column="PRAISE_NUM" jdbcType="INTEGER"/>
+    <result property="commentNum" column="COMMENT_NUM" jdbcType="INTEGER"/>
+    <result property="avgScore" column="AVG_SCORE" jdbcType="DOUBLE"/>
+  </resultMap>
+
+  <resultMap id="ShowVoteCountVO" type="com.luopan.annualmeeting.entity.vo.ShowVoteCountVO">
+    <id property="id" column="ID" jdbcType="BIGINT"/>
+    <result property="name" column="NAME" jdbcType="VARCHAR"/>
+    <result property="department" column="DEPARTMENT" jdbcType="VARCHAR"/>
+    <result property="performer" column="PERFORMER" jdbcType="VARCHAR"/>
+    <result property="type" column="TYPE" jdbcType="VARCHAR"/>
+    <result property="orderNum" column="ORDER_NUM" jdbcType="INTEGER"/>
+    <result property="voteCount" column="VOTE_COUNT" jdbcType="INTEGER"/>
+  </resultMap>
+
+  <sql id="BaseSql">
+    id, name, department, performer, type, order_num
+  </sql>
+
+  <insert id="insert" parameterType="show">
+    insert into `show`(name, department, performer, type, order_num, create_time, update_time, status)
+    values (#{name}, #{department}, #{performer}, #{type}, #{orderNum}, #{createTime}, #{updateTime}, #{status})
+  </insert>
+
+  <select id="findAll" resultMap="BaseResultMap">
+    select <include refid="BaseSql"/>
+    from `show`
+    where status = 1
+    order by order_num
+  </select>
+
+  <select id="findShowScorePraiseCommentVOList" resultMap="ShowScorePraiseCommentVO">
+    select s.id, s.name, s.department, s.performer, s.type, s.order_num,
+    round(avg(ss.score), 2) as avg_score,
+    count(p.id) as praise_num,
+    count(c.id) as comment_num
+    from `show` s
+    left join show_score ss on s.id = ss.show_id and ss.status = 1
+    left join praise p on s.id = p.show_id and p.status = 1
+    left join comment c on s.id = c.show_id and c.status = 1
+    where s.status = 1
+    group by s.id
+    order by s.order_num
+  </select>
+
+  <select id="findShowVoteCountVOList" resultMap="ShowVoteCountVO">
+    select s.id, s.name, s.department, s.performer, s.type, s.order_num,
+    count(sv.id) as vote_count
+    from `show` s
+    left join show_vote sv on s.id = sv.show_id and sv.status = 1
+    where s.status = 1
+    group by s.id
+    order by s.order_num
+  </select>
+
+</mapper>

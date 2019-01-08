@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.luopan.annualmeeting.dao.PersonDao">
+
+  <resultMap id="BaseResultMap" type="com.luopan.annualmeeting.entity.Person">
+    <id property="id" column="ID" jdbcType="BIGINT"/>
+    <result property="name" column="NAME" jdbcType="VARCHAR"/>
+    <result property="nickname" column="NICKNAME" jdbcType="VARCHAR"/>
+    <result property="avatarUrl" column="AVATAR_URL" jdbcType="VARCHAR"/>
+    <result property="gender" column="GENDER" jdbcType="INTEGER"/>
+    <result property="phone" column="PHONE" jdbcType="VARCHAR"/>
+    <result property="country" column="COUNTRY" jdbcType="VARCHAR"/>
+    <result property="province" column="PROVINCE" jdbcType="VARCHAR"/>
+    <result property="city" column="CITY" jdbcType="VARCHAR"/>
+    <result property="signType" column="SIGN_TYPE" jdbcType="INTEGER"/>
+    <result property="openid" column="OPENID" jdbcType="VARCHAR"/>
+    <result property="speakStatus" column="SPEAK_STATUS" jdbcType="INTEGER"/>
+    <result property="createTime" column="CREATE_TIME" jdbcType="TIMESTAMP"/>
+    <result property="updateTime" column="UPDATE_TIME" jdbcType="TIMESTAMP"/>
+    <result property="status" column="STATUS" jdbcType="INTEGER"/>
+  </resultMap>
+
+  <resultMap id="PersonVO" type="com.luopan.annualmeeting.entity.vo.PersonVO">
+    <id property="id" column="ID" jdbcType="BIGINT"/>
+    <result property="name" column="NAME" jdbcType="VARCHAR"/>
+    <result property="nickname" column="NICKNAME" jdbcType="VARCHAR"/>
+    <result property="avatarUrl" column="AVATAR_URL" jdbcType="VARCHAR"/>
+    <result property="gender" column="GENDER" jdbcType="INTEGER"/>
+    <result property="phone" column="PHONE" jdbcType="VARCHAR"/>
+    <result property="country" column="COUNTRY" jdbcType="VARCHAR"/>
+    <result property="province" column="PROVINCE" jdbcType="VARCHAR"/>
+    <result property="city" column="CITY" jdbcType="VARCHAR"/>
+    <result property="signType" column="SIGN_TYPE" jdbcType="INTEGER"/>
+    <result property="speakStatus" column="SPEAK_STATUS" jdbcType="INTEGER"/>
+    <result property="signTime" column="SIGN_TIME" jdbcType="TIMESTAMP"/>
+  </resultMap>
+
+  <sql id="BaseSql">
+    ID, NAME, NICKNAME, AVATAR_URL, GENDER, PHONE, COUNTRY, PROVINCE, CITY, SIGN_TYPE, OPENID, SPEAK_STATUS, CREATE_TIME
+  </sql>
+
+  <insert id="insert" parameterType="person" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO person(NAME, NICKNAME, AVATAR_URL, GENDER, PHONE, COUNTRY, PROVINCE, CITY, SIGN_TYPE, OPENID, SPEAK_STATUS, CREATE_TIME, UPDATE_TIME, STATUS)
+    VALUES (#{name}, #{nickname}, #{avatarUrl}, #{gender}, #{phone}, #{country}, #{province}, #{city}, #{signType}, #{openid}, #{speakStatus}, #{createTime}, #{updateTime}, #{status})
+  </insert>
+
+  <select id="findAll" resultMap="BaseResultMap">
+    SELECT
+    <include refid="BaseSql"/>
+    FROM person
+    WHERE status = 1
+  </select>
+
+  <select id="findNoLotteryPeople" resultMap="BaseResultMap">
+    select
+    <include refid="BaseSql"/>
+    from person p
+    where status = 1 and
+    not exists (select 1 from lottery l where l.status = 1 and p.id = l.person_id)
+  </select>
+
+  <select id="findJoinGrandPrizePersonIds" resultType="long">
+    select distinct person_id
+    from message
+    where status = 1
+    union
+    select distinct person_id
+    from show_score
+    where status = 1
+  </select>
+
+  <select id="countAll" resultType="long">
+    select count(id)
+    from person
+    where status = 1
+  </select>
+
+  <select id="search" resultMap="PersonVO" parameterType="personSearchVO">
+    select id, name, nickname, avatar_url, gender, phone, country, province, city, sign_type,
+    speak_status, create_time as sign_time
+    from person
+    where status = 1
+    <if test="name != null and name != ''">
+      and locate(#{name}, name) > 0
+    </if>
+    <if test="speakStatus != null">
+      and speak_status = #{speakStatus}
+    </if>
+  </select>
+
+  <select id="findByOpenid" resultType="person" parameterType="string">
+    select
+    <include refid="BaseSql"/>
+    from person
+    where status = 1 and
+    openid = #{openid}
+  </select>
+
+  <update id="updateSelective" parameterType="person">
+    update person
+    <set>
+      <if test="name != null and name != ''">
+        name = #{name},
+      </if>
+      <if test="phone != null and phone != ''">
+        phone = #{phone},
+      </if>
+      <if test="speakStatus != null">
+        speak_status = #{speakStatus},
+      </if>
+      <if test="updateTime != null">
+        update_time = #{updateTime},
+      </if>
+    </set>
+    where id = #{id}
+  </update>
+
+</mapper>

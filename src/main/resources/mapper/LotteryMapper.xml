@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.luopan.annualmeeting.dao.LotteryDao">
+
+  <resultMap id="BaseResultMap" type="com.luopan.annualmeeting.entity.Lottery">
+    <id property="id" column="ID" jdbcType="BIGINT"/>
+    <result property="personId" column="PERSON_ID" jdbcType="BIGINT"/>
+    <result property="rewardId" column="REWARD_ID" jdbcType="BIGINT"/>
+    <result property="createTime" column="CREATE_TIME" jdbcType="TIMESTAMP"/>
+    <result property="updateTime" column="UPDATE_TIME" jdbcType="TIMESTAMP"/>
+    <result property="status" column="STATUS" jdbcType="INTEGER"/>
+  </resultMap>
+
+  <resultMap id="LotteryPersonVO" type="com.luopan.annualmeeting.entity.vo.LotteryPersonVO">
+    <result property="name" column="NAME" jdbcType="VARCHAR"/>
+    <result property="nickname" column="NICKNAME" jdbcType="VARCHAR"/>
+    <result property="avatarUrl" column="AVATAR_URL" jdbcType="VARCHAR"/>
+    <result property="gender" column="GENDER" jdbcType="INTEGER"/>
+    <result property="phone" column="PHONE" jdbcType="VARCHAR"/>
+    <result property="country" column="COUNTRY" jdbcType="VARCHAR"/>
+    <result property="province" column="PROVINCE" jdbcType="VARCHAR"/>
+    <result property="city" column="CITY" jdbcType="VARCHAR"/>
+  </resultMap>
+
+  <resultMap id="LotteryPersonRewardVO" type="com.luopan.annualmeeting.entity.vo.LotteryPersonRewardVO">
+    <result property="name" column="NAME" jdbcType="VARCHAR"/>
+    <result property="nickname" column="NICKNAME" jdbcType="VARCHAR"/>
+    <result property="avatarUrl" column="AVATAR_URL" jdbcType="VARCHAR"/>
+    <result property="gender" column="GENDER" jdbcType="INTEGER"/>
+    <result property="phone" column="PHONE" jdbcType="VARCHAR"/>
+    <result property="country" column="COUNTRY" jdbcType="VARCHAR"/>
+    <result property="province" column="PROVINCE" jdbcType="VARCHAR"/>
+    <result property="city" column="CITY" jdbcType="VARCHAR"/>
+    <result property="rewardName" column="REWARD_NAME" jdbcType="VARCHAR"/>
+    <result property="rewardLevel" column="REWARD_LEVEL" jdbcType="INTEGER"/>
+    <result property="rewardImageUrl" column="REWARD_IMAGE_URL" jdbcType="VARCHAR"/>
+  </resultMap>
+
+  <resultMap id="LotteryRewardVO" type="com.luopan.annualmeeting.entity.vo.LotteryRewardVO">
+    <result property="name" column="NAME" jdbcType="VARCHAR"/>
+    <result property="level" column="LEVEL" jdbcType="INTEGER"/>
+    <result property="imageUrl" column="IMAGE_URL" jdbcType="VARCHAR"/>
+  </resultMap>
+
+  <sql id="BaseSql">
+    ID, PERSON_ID, REWARD_ID, CREATE_TIME
+  </sql>
+
+  <insert id="insert" parameterType="reward">
+    INSERT INTO lottery(PERSON_ID, REWARD_ID, CREATE_TIME, UPDATE_TIME, STATUS)
+    VALUES (#{personId}, #{rewardId}, #{createTime}, #{updateTime}, #{status})
+  </insert>
+
+  <select id="findAll" resultMap="BaseResultMap">
+    SELECT person_id, reward_id
+    FROM lottery
+    WHERE status = 1
+  </select>
+
+  <select id="findLotteryPeople" resultMap="LotteryPersonRewardVO">
+    SELECT p.name, p.nickname, p.avatar_url, p.gender, p.phone, p.country,
+    p.province, p.city, r.name as reward_name, r.level as reward_level,
+    r.image_url as reward_image_url
+    FROM lottery l
+    LEFT JOIN person p ON l.person_id = p.id
+    LEFT JOIN reward r ON l.reward_id = r.id
+    WHERE l.status = 1 AND p.status = 1 AND r.status = 1
+    ORDER BY r.level
+  </select>
+
+  <select id="findLotteryPeopleByRewardId" resultMap="LotteryPersonVO" parameterType="long">
+    SELECT p.name, p.nickname, p.avatar_url, p.gender, p.phone, p.country,
+    p.province, p.city
+    FROM lottery l
+    LEFT JOIN person p ON l.person_id = p.id
+    WHERE l.status = 1 AND p.status = 1 AND l.reward_id = #{rewardId}
+  </select>
+
+  <select id="findRewardByPersonId" resultMap="LotteryRewardVO" parameterType="long">
+    SELECT r.name, r.level, r.image_url
+    FROM lottery l
+    LEFT JOIN person p ON l.person_id = p.id
+    LEFT JOIN reward r ON l.reward_id = r.id
+    WHERE l.status = 1 AND p.status = 1 AND r.status = 1
+    AND l.person_id = #{personId}
+  </select>
+
+</mapper>
