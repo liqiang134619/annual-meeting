@@ -1,6 +1,9 @@
 /target/
 !.mvn/wrapper/maven-wrapper.jar
 
+### JRelbel ###
+/src/main/resources/rebel.xml
+
 ### STS ###
 .apt_generated
 .classpath
