@@ -156,7 +156,8 @@ public class PersonService implements IPersonService {
       Person person = personList.get(0);
       PersonVO personVO = new PersonVO();
       BeanUtils.copyProperties(person, personVO);
-      return ResultUtil.success(person);
+      personVO.setSignTime(person.getCreateTime());
+      return ResultUtil.success(personVO);
     }
     WeChatOpenidVO weChatOpenidVO = new WeChatOpenidVO();
     weChatOpenidVO.setOpenid(openid);
