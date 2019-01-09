@@ -42,6 +42,8 @@ public class CountService implements ICountService {
         .getInt(redisUtil.getString(RedisKey.PERSON_VOTE_NUM), commConfig.getPersonVoteNum());
     Date voteStartTime = (Date) redisUtil.get(RedisKey.VOTE_START_TIME);
     Date voteEndTime = (Date) redisUtil.get(RedisKey.VOTE_END_TIME);
+    Date annualMeetingStartTime = (Date) redisUtil.get(RedisKey.ANNUAL_MEETING_START_TIME);
+    Date annualMeetingEndTime = (Date) redisUtil.get(RedisKey.ANNUAL_MEETING_END_TIME);
     CountVO countVO = new CountVO();
     countVO.setVoteStartTime(voteStartTime);
     countVO.setVoteEndTime(voteEndTime);
@@ -50,6 +52,8 @@ public class CountService implements ICountService {
     countVO.setSignNum(signNum);
     countVO.setPersonVoteNum(personVoteNum);
     countVO.setMessageNum(messageNum);
+    countVO.setAnnualMeetingStartTime(annualMeetingStartTime);
+    countVO.setAnnualMeetingEndTime(annualMeetingEndTime);
     return ResultUtil.success(countVO);
   }
 

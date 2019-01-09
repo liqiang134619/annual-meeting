@@ -25,4 +25,8 @@ public class CountVO implements Serializable {
 
   private Date voteEndTime;
 
+  private Date annualMeetingStartTime;
+
+  private Date annualMeetingEndTime;
+
 }

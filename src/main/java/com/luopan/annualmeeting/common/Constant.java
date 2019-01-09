@@ -57,6 +57,12 @@ public class Constant {
 
     // 单人投票次数
     String PERSON_VOTE_NUM = "PERSON_VOTE_NUM";
+
+    // 年会开始时间
+    String ANNUAL_MEETING_START_TIME = "ANNUAL_MEETING_START_TIME";
+
+    // 年会结束时间
+    String ANNUAL_MEETING_END_TIME = "ANNUAL_MEETING_END_TIME";
   }
 
   /**
@@ -130,5 +136,7 @@ public class Constant {
   public static final int MESSAGE_DEFAULT_INDEX = 0;
 
   public static final String EMPTY_STR = "";
+
+  public static final String DEFAULT_CONTENT_TYPE = "application/json;charset=utf-8";
 
 }

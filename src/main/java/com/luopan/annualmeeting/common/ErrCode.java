@@ -37,6 +37,10 @@ public enum ErrCode {
   VOTE_ENDED(1252, "投票已结束"),
   HAD_VOTE(1253, "重复投票"),
   NO_VOTE_NUM(1254, "无投票次数"),
+
+  // 年会 1301-1320
+  ANNUAL_MEETING_NOT_STARTED(1301, "年会尚未开始"),
+  ANNUAL_MEETING_ENDED(1302, "年会已结束"),
   ;
 
   private int errCode;
