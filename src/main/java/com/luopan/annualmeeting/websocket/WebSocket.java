@@ -54,7 +54,6 @@ public class WebSocket {
 
   @OnError
   public void onError(Session session, Throwable error) {
-    webSocketMap.remove(this.personId);
     log.error("WebSocket服务端发生了错误" + error.getMessage());
   }
 

@@ -117,7 +117,6 @@ public class ServerManageWebSocket {
 
   @OnError
   public void onError(Session session, Throwable error) {
-    websocketSet.remove(this);
     log.error("后台管理WebSocket服务端发生了错误" + error.getMessage());
   }
 

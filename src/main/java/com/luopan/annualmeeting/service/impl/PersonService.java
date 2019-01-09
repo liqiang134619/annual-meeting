@@ -29,6 +29,7 @@ import com.luopan.annualmeeting.util.JsonUtil;
 import com.luopan.annualmeeting.util.RedisUtil;
 import com.luopan.annualmeeting.util.ResultUtil;
 import com.luopan.annualmeeting.websocket.ServerManageWebSocket;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -137,9 +138,9 @@ public class PersonService implements IPersonService {
     SignInPersonVO signInPersonVO = new SignInPersonVO();
     BeanUtils.copyProperties(person, signInPersonVO);
     signInPersonVO.setSignInTime(person.getCreateTime());
-    WebSocketMessageVO<SignInPersonVO> webSocketMessageVO = new WebSocketMessageVO<>();
+    WebSocketMessageVO<List<SignInPersonVO>> webSocketMessageVO = new WebSocketMessageVO<>();
     webSocketMessageVO.setType(WebSocketMessageType.SIGN_IN);
-    webSocketMessageVO.setData(signInPersonVO);
+    webSocketMessageVO.setData(Arrays.asList(signInPersonVO));
     serverManageWebSocket.sendMessageAll(JsonUtil.obj2String(webSocketMessageVO));
 
     return ResultUtil.success(personVO);
