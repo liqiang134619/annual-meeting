@@ -1,5 +1,6 @@
 package com.luopan.annualmeeting.service.impl;
 
+import com.luopan.annualmeeting.common.Constant;
 import com.luopan.annualmeeting.common.Constant.OAuth2Param;
 import com.luopan.annualmeeting.common.Constant.OAuth2Url;
 import com.luopan.annualmeeting.common.Constant.RedisKey;
@@ -8,7 +9,6 @@ import com.luopan.annualmeeting.common.Constant.Status;
 import com.luopan.annualmeeting.common.Constant.WebSocketMessageType;
 import com.luopan.annualmeeting.common.ErrCode;
 import com.luopan.annualmeeting.common.RespMsg;
-import com.luopan.annualmeeting.config.CommConfig;
 import com.luopan.annualmeeting.dao.PersonDao;
 import com.luopan.annualmeeting.entity.Person;
 import com.luopan.annualmeeting.entity.vo.AccessTokenVO;
@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -44,9 +45,6 @@ public class PersonService implements IPersonService {
 
   @Autowired
   private PersonDao personDao;
-
-  @Autowired
-  private CommConfig commConfig;
 
   @Autowired
   private RedisUtil redisUtil;
@@ -109,8 +107,7 @@ public class PersonService implements IPersonService {
 
     // 获取accessToken
     String accessTokenResult = HttpUtil.sendGet(OAuth2Url.ACCESS_TOKEN, String
-        .format(OAuth2Param.ACCESS_TOKEN, commConfig.getWechatAppId(),
-            commConfig.getWechatAppSecret()));
+        .format(OAuth2Param.ACCESS_TOKEN, Constant.WECHAT_APP_ID, Constant.WECHAT_APP_SECRET));
     AccessTokenVO accessTokenVO = JsonUtil.string2Obj(accessTokenResult, AccessTokenVO.class);
     // 获取userInfo
     String userInfoResult = HttpUtil.sendGet(OAuth2Url.USER_INFO, String
@@ -135,13 +132,14 @@ public class PersonService implements IPersonService {
     personVO.setSignTime(person.getCreateTime());
 
     // 推送签到消息
-    SignInPersonVO signInPersonVO = new SignInPersonVO();
-    BeanUtils.copyProperties(person, signInPersonVO);
-    signInPersonVO.setSignInTime(person.getCreateTime());
-    WebSocketMessageVO<List<SignInPersonVO>> webSocketMessageVO = new WebSocketMessageVO<>();
-    webSocketMessageVO.setType(WebSocketMessageType.SIGN_IN);
-    webSocketMessageVO.setData(Arrays.asList(signInPersonVO));
-    serverManageWebSocket.sendMessageAll(JsonUtil.obj2String(webSocketMessageVO));
+    CompletableFuture.runAsync(() -> {
+      SignInPersonVO signInPersonVO = new SignInPersonVO();
+      BeanUtils.copyProperties(person, signInPersonVO);
+      signInPersonVO.setSignInTime(person.getCreateTime());
+      WebSocketMessageVO<List<SignInPersonVO>> webSocketMessageVO = new WebSocketMessageVO<>(
+          WebSocketMessageType.SIGN_IN, Arrays.asList(signInPersonVO));
+      serverManageWebSocket.sendMessageAll(JsonUtil.obj2String(webSocketMessageVO));
+    });
 
     return ResultUtil.success(personVO);
   }
@@ -171,8 +169,7 @@ public class PersonService implements IPersonService {
       return null;
     }
     String result = HttpUtil.sendGet(OAuth2Url.OPENID, String
-        .format(OAuth2Param.OPENID, commConfig.getWechatAppId(), commConfig.getWechatAppSecret(),
-            code));
+        .format(OAuth2Param.OPENID, Constant.WECHAT_APP_ID, Constant.WECHAT_APP_SECRET, code));
     WeChatAuthVO weChatAuthVO = JsonUtil.string2Obj(result, WeChatAuthVO.class);
     return weChatAuthVO.getOpenid();
   }

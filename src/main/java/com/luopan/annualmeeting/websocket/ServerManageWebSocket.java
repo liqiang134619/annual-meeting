@@ -3,7 +3,6 @@ package com.luopan.annualmeeting.websocket;
 import com.luopan.annualmeeting.common.Constant;
 import com.luopan.annualmeeting.common.Constant.RedisKey;
 import com.luopan.annualmeeting.common.Constant.WebSocketMessageType;
-import com.luopan.annualmeeting.config.CommConfig;
 import com.luopan.annualmeeting.entity.vo.MessageVO;
 import com.luopan.annualmeeting.entity.vo.ShowVoteCountVO;
 import com.luopan.annualmeeting.entity.vo.SignInPersonVO;
@@ -15,11 +14,9 @@ import com.luopan.annualmeeting.util.JsonUtil;
 import com.luopan.annualmeeting.util.RedisUtil;
 import com.luopan.annualmeeting.util.Tools;
 import java.io.IOException;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import javax.websocket.OnClose;
 import javax.websocket.OnError;
 import javax.websocket.OnMessage;
@@ -52,8 +49,6 @@ public class ServerManageWebSocket {
 
   private static RedisUtil redisUtil;
 
-  private static CommConfig commConfig;
-
   @OnOpen
   public void onOpen(Session session) {
     this.session = session;
@@ -61,25 +56,22 @@ public class ServerManageWebSocket {
     // 已签到人员
     List<SignInPersonVO> signInPersonList = personService.findSignInPersonList();
     if (signInPersonList != null && !signInPersonList.isEmpty()) {
-      WebSocketMessageVO<List<SignInPersonVO>> webSocketMessageVO = new WebSocketMessageVO<>();
-      webSocketMessageVO.setType(WebSocketMessageType.SIGN_IN);
-      webSocketMessageVO.setData(signInPersonList);
+      WebSocketMessageVO<List<SignInPersonVO>> webSocketMessageVO = new WebSocketMessageVO<>(
+          WebSocketMessageType.SIGN_IN, signInPersonList);
       sendMessageTo(JsonUtil.obj2String(webSocketMessageVO), session);
     }
     // 节目投票
     List<ShowVoteCountVO> showVoteCountVOList = showService.findShowVoteCountVOList();
     if (showVoteCountVOList != null && !showVoteCountVOList.isEmpty()) {
-      WebSocketMessageVO<List<ShowVoteCountVO>> webSocketMessageVO = new WebSocketMessageVO<>();
-      webSocketMessageVO.setType(WebSocketMessageType.SHOW_VOTE);
-      webSocketMessageVO.setData(showVoteCountVOList);
+      WebSocketMessageVO<List<ShowVoteCountVO>> webSocketMessageVO = new WebSocketMessageVO<>(
+          WebSocketMessageType.SHOW_VOTE, showVoteCountVOList);
       sendMessageTo(JsonUtil.obj2String(webSocketMessageVO), session);
     }
     // 留言墙
     List<MessageVO> firstSendMessageList = getFirstSendMessages();
     if (firstSendMessageList != null && !firstSendMessageList.isEmpty()) {
-      WebSocketMessageVO<List<MessageVO>> webSocketMessageVO = new WebSocketMessageVO<>();
-      webSocketMessageVO.setType(WebSocketMessageType.MESSAGE);
-      webSocketMessageVO.setData(firstSendMessageList);
+      WebSocketMessageVO<List<MessageVO>> webSocketMessageVO = new WebSocketMessageVO<>(
+          WebSocketMessageType.MESSAGE, firstSendMessageList);
       sendMessageTo(JsonUtil.obj2String(webSocketMessageVO), session);
     }
 
@@ -87,25 +79,11 @@ public class ServerManageWebSocket {
   }
 
   private List<MessageVO> getFirstSendMessages() {
-    List<MessageVO> list = new LinkedList<>();
     int num = Tools
-        .getInt(redisUtil.getString(RedisKey.MESSAGE_TASK_NUM), commConfig.getMessageTaskNum());
-    long index = Tools
-        .getLong(redisUtil.getString(RedisKey.MESSAGE_LAST_INDEX), Constant.MESSAGE_DEFAULT_INDEX);
-    long startId = index - num;
-    if (startId < Constant.MESSAGE_DEFAULT_INDEX) {
-      startId = Constant.MESSAGE_DEFAULT_INDEX;
-    }
-    long endId = index - 1;
-    if (endId < Constant.MESSAGE_DEFAULT_INDEX) {
-      endId = Constant.MESSAGE_DEFAULT_INDEX;
-    }
-    List<Object> objects = redisUtil.lGet(RedisKey.CHECK_PASS_MESSAGES, startId, endId);
-    if (objects != null && !objects.isEmpty()) {
-      List<Long> ids = objects.stream().map(object -> Long.parseLong(object.toString()))
-          .collect(Collectors.toList());
-      list = messageService.findSendMessages(ids);
-    }
+        .getInt(redisUtil.getString(RedisKey.MESSAGE_TASK_NUM), Constant.MESSAGE_TASK_NUM);
+    long offset = Tools
+        .getLong(redisUtil.getString(RedisKey.MESSAGE_OFFSET), Constant.MESSAGE_DEFAULT_OFFSET);
+    List<MessageVO> list = messageService.findSendMessages(offset, num);
     return list;
   }
 
@@ -117,7 +95,7 @@ public class ServerManageWebSocket {
 
   @OnError
   public void onError(Session session, Throwable error) {
-    log.error("后台管理WebSocket服务端发生了错误" + error.getMessage());
+    log.error("后台管理WebSocket服务端发生了错误", error);
   }
 
   @OnMessage
@@ -152,7 +130,6 @@ public class ServerManageWebSocket {
     showService = (IShowService) applicationContext.getBean("showService");
     messageService = (IMessageService) applicationContext.getBean("messageService");
     redisUtil = (RedisUtil) applicationContext.getBean("redisUtil");
-    commConfig = (CommConfig) applicationContext.getBean("commConfig");
   }
 
 }

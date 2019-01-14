@@ -7,6 +7,10 @@ import com.luopan.annualmeeting.common.RespMsg;
 @SuppressWarnings("unchecked")
 public final class ResultUtil {
 
+  private ResultUtil() {
+
+  }
+
   /**
    * 成功并带有返回值
    * @param data 返回值

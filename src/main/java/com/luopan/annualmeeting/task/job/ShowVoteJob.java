@@ -26,9 +26,8 @@ public class ShowVoteJob implements Job {
   public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
     List<ShowVoteCountVO> showVoteCountVOList = showService.findShowVoteCountVOList();
     if (showVoteCountVOList != null && !showVoteCountVOList.isEmpty()) {
-      WebSocketMessageVO<List<ShowVoteCountVO>> webSocketMessageVO = new WebSocketMessageVO<>();
-      webSocketMessageVO.setData(showVoteCountVOList);
-      webSocketMessageVO.setType(WebSocketMessageType.SHOW_VOTE);
+      WebSocketMessageVO<List<ShowVoteCountVO>> webSocketMessageVO = new WebSocketMessageVO<>(
+          WebSocketMessageType.SHOW_VOTE, showVoteCountVOList);
       serverManageWebSocket.sendMessageAll(JsonUtil.obj2String(webSocketMessageVO));
     }
   }

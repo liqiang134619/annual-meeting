@@ -1,10 +1,10 @@
 package com.luopan.annualmeeting.service.impl;
 
+import com.luopan.annualmeeting.common.Constant;
 import com.luopan.annualmeeting.common.Constant.QuartzJobName;
 import com.luopan.annualmeeting.common.Constant.RedisKey;
 import com.luopan.annualmeeting.common.ErrCode;
 import com.luopan.annualmeeting.common.RespMsg;
-import com.luopan.annualmeeting.config.CommConfig;
 import com.luopan.annualmeeting.dao.ShowVoteDao;
 import com.luopan.annualmeeting.entity.ShowVote;
 import com.luopan.annualmeeting.entity.vo.ShowVoteStateVO;
@@ -32,9 +32,6 @@ public class ShowVoteService implements IShowVoteService {
   private RedisUtil redisUtil;
 
   @Autowired
-  private CommConfig commConfig;
-
-  @Autowired
   private QuartzManager quartzManager;
 
   @Transactional
@@ -55,7 +52,7 @@ public class ShowVoteService implements IShowVoteService {
 
     List<ShowVote> showVoteList = showVoteDao.findByPersonId(showVoteVO.getPersonId());
     Integer personVoteNum = Tools
-        .getInt(redisUtil.getString(RedisKey.PERSON_VOTE_NUM), commConfig.getPersonVoteNum());
+        .getInt(redisUtil.getString(RedisKey.PERSON_VOTE_NUM), Constant.PERSON_VOTE_NUM);
     // 判断有无剩余投票次数
     if (showVoteList.size() == personVoteNum) {
       return ResultUtil.error(ErrCode.NO_VOTE_NUM);
@@ -83,12 +80,12 @@ public class ShowVoteService implements IShowVoteService {
     if (startTime != null) {
       redisUtil.set(RedisKey.VOTE_START_TIME, startTime);
       quartzManager
-          .saveJob(QuartzJobName.VOTE, ShowVoteJob.class, commConfig.getVoteTaskInterval());
+          .saveJob(QuartzJobName.VOTE, ShowVoteJob.class, Constant.VOTE_TASK_INTERVAL);
     }
     Date endTime = showVoteStateVO.getEndTime();
     if (endTime != null) {
       redisUtil.set(RedisKey.VOTE_END_TIME, endTime);
-      quartzManager.saveJob(QuartzJobName.VOTE, ShowVoteJob.class, commConfig.getVoteTaskInterval(),
+      quartzManager.saveJob(QuartzJobName.VOTE, ShowVoteJob.class, Constant.VOTE_TASK_INTERVAL,
           endTime);
     }
     Integer personVoteNum = showVoteStateVO.getPersonVoteNum();

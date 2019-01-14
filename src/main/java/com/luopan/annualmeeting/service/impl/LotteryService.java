@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -115,11 +116,12 @@ public class LotteryService implements ILotteryService {
       lottery.fillDefaultProperty();
       lotteryDao.insert(lottery);
 
-      // todo 推送中奖通知 这边可以集成消息队列
-      WebSocketMessageVO<String> webSocketMessageVO = new WebSocketMessageVO<>();
-      webSocketMessageVO.setType(WebSocketMessageType.LOTTERY);
-      webSocketMessageVO.setData(Constant.LOTTERY_MESSAGE);
-      webSocket.sendMessageTo(JsonUtil.obj2String(webSocketMessageVO), person.getId());
+      // 推送中奖通知
+      CompletableFuture.runAsync(() -> {
+        WebSocketMessageVO<String> webSocketMessageVO = new WebSocketMessageVO<>(
+            WebSocketMessageType.LOTTERY, Constant.LOTTERY_MESSAGE);
+        webSocket.sendMessageTo(JsonUtil.obj2String(webSocketMessageVO), person.getId());
+      });
     }
 
     return ResultUtil.success(lotteryPersonVOList);

@@ -16,6 +16,10 @@ public final class DateUtil {
   public static final String DATE_PATTERN = "yyyy-MM-dd";
   public static final String TIME_PATTERN = "HH:mm:ss";
 
+  private DateUtil() {
+
+  }
+
   /**
    * 时间转为字符串
    * @param date

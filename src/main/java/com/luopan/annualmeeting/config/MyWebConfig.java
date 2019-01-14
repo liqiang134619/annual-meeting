@@ -1,6 +1,7 @@
 package com.luopan.annualmeeting.config;
 
-import com.luopan.annualmeeting.interceptor.DuringAnnualMeetingInterceptor;
+import com.luopan.annualmeeting.interceptor.AnnualMeetingEndInterceptor;
+import com.luopan.annualmeeting.interceptor.AnnualMeetingStartInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -17,14 +18,17 @@ public class MyWebConfig implements WebMvcConfigurer {
 
   @Override
   public void addInterceptors(InterceptorRegistry registry) {
-    registry.addInterceptor(duringAnnualMeetingInterceptor()).addPathPatterns("/*/add")
-        .addPathPatterns("/person/auth").addPathPatterns("/show/score")
-        .addPathPatterns("/show/praise");
+
   }
 
   @Bean
-  public DuringAnnualMeetingInterceptor duringAnnualMeetingInterceptor() {
-    return new DuringAnnualMeetingInterceptor();
+  public AnnualMeetingStartInterceptor annualMeetingStartInterceptor() {
+    return new AnnualMeetingStartInterceptor();
+  }
+
+  @Bean
+  public AnnualMeetingEndInterceptor annualMeetingEndInterceptor() {
+    return new AnnualMeetingEndInterceptor();
   }
 
   /*****************swagger2配置********************/

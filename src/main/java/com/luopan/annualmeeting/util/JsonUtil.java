@@ -14,6 +14,10 @@ import org.springframework.util.StringUtils;
 @Slf4j
 public final class JsonUtil {
 
+  private JsonUtil() {
+
+  }
+
   private static ObjectMapper objectMapper = new ObjectMapper();
 
   static {

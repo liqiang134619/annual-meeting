@@ -1,6 +1,7 @@
 package com.luopan.annualmeeting.dao;
 
 import com.luopan.annualmeeting.entity.Message;
+import com.luopan.annualmeeting.entity.vo.LimitVO;
 import com.luopan.annualmeeting.entity.vo.MessageManageVO;
 import com.luopan.annualmeeting.entity.vo.MessageSearchVO;
 import com.luopan.annualmeeting.entity.vo.MessageVO;
@@ -23,6 +24,8 @@ public interface MessageDao {
 
   int updateSelective(Message message);
 
-  List<MessageVO> findSendMessages(List<Long> ids);
+  List<MessageVO> findSendMessages(LimitVO limitVO);
+
+  List<Message> findSelfMessages(long personId);
 
 }

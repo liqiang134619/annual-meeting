@@ -1,10 +1,12 @@
 package com.luopan.annualmeeting.websocket;
 
-import com.luopan.annualmeeting.common.Constant.RedisKey;
-import com.luopan.annualmeeting.entity.Message;
+import com.luopan.annualmeeting.common.Constant.WebSocketMessageType;
+import com.luopan.annualmeeting.entity.vo.SelfMessageVO;
+import com.luopan.annualmeeting.entity.vo.WebSocketMessageVO;
 import com.luopan.annualmeeting.service.IMessageService;
-import com.luopan.annualmeeting.util.RedisUtil;
+import com.luopan.annualmeeting.util.JsonUtil;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.websocket.OnClose;
@@ -36,14 +38,19 @@ public class WebSocket {
 
   private static IMessageService messageService;
 
-  private static RedisUtil redisUtil;
-
   @OnOpen
   public void onOpen(@PathParam("personId") Long personId, Session session) {
     this.session = session;
     this.personId = personId;
     webSocketMap.put(personId, this);
     log.info("当前连接数：{}", count.incrementAndGet());
+    // 连接后发送本人已发消息
+    List<SelfMessageVO> selfMessages = messageService.findSelfMessages(personId);
+    if (selfMessages != null && !selfMessages.isEmpty()) {
+      WebSocketMessageVO<List<SelfMessageVO>> webSocketMessageVO = new WebSocketMessageVO<>(
+          WebSocketMessageType.MESSAGE, selfMessages);
+      sendMessageTo(JsonUtil.obj2String(webSocketMessageVO), session);
+    }
   }
 
   @OnClose
@@ -54,19 +61,13 @@ public class WebSocket {
 
   @OnError
   public void onError(Session session, Throwable error) {
-    log.error("WebSocket服务端发生了错误" + error.getMessage());
+    log.error("WebSocket服务端发生了错误", error);
   }
 
   @OnMessage
   public void onMessage(String message) {
-    if (redisUtil.sContain(RedisKey.BANNED_PERSON_ID, personId.toString())) {
-      return;
-    }
-    Message msg = new Message();
-    msg.setPersonId(personId);
-    msg.setMessage(message);
-    msg.fillDefaultProperty();
-    messageService.insert(msg);
+    // 发送消息
+    messageService.sendMessage(personId, message);
   }
 
   public void sendMessageAll(String message) {
@@ -94,9 +95,16 @@ public class WebSocket {
     }
   }
 
+  public void sendMessageTo(String message, Session session) {
+    try {
+      session.getBasicRemote().sendText(message);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+  }
+
   public static void fillAutowireProperty(ApplicationContext applicationContext) {
     messageService = (IMessageService) applicationContext.getBean("messageService");
-    redisUtil = (RedisUtil) applicationContext.getBean("redisUtil");
   }
 
 }

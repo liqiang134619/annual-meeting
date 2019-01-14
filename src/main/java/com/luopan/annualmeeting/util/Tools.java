@@ -2,6 +2,10 @@ package com.luopan.annualmeeting.util;
 
 public final class Tools {
 
+  private Tools() {
+
+  }
+
   public static Integer getInt(String str) {
     try {
       Integer num = Integer.parseInt(str);

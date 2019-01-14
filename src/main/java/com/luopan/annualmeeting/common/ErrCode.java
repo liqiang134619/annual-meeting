@@ -14,6 +14,7 @@ public enum ErrCode {
   NO_ENOUGH_PERSON(1052, "参与抽奖人数不足"),
   HAD_SIGN_IN(1053, "重复签到"),
   INVALID_CODE(1054, "无效CODE"),
+  HAD_BANNED(1055, "已被屏蔽"),
 
   // 点赞 1101-1120
   HAD_PRAISE(1101, "重复点赞"),

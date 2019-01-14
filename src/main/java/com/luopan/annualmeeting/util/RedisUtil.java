@@ -12,6 +12,10 @@ import org.springframework.util.CollectionUtils;
 @SuppressWarnings("unchecked")
 public final class RedisUtil {
 
+  private RedisUtil() {
+
+  }
+
   @Autowired
   private RedisTemplate redisTemplate;
 

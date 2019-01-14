@@ -32,37 +32,37 @@ public class Constant {
   public interface RedisKey {
 
     // 任务间隔
-    String MESSAGE_TASK_INTERVAL = "MESSAGE_TASK_INTERVAL";
+    String MESSAGE_TASK_INTERVAL = "ANNUAL_MEETING:MESSAGE_TASK_INTERVAL";
 
     // 任务消息数
-    String MESSAGE_TASK_NUM = "MESSAGE_TASK_NUM";
+    String MESSAGE_TASK_NUM = "ANNUAL_MEETING:MESSAGE_TASK_NUM";
 
-    // 上次读取消息的序号
-    String MESSAGE_LAST_INDEX = "MESSAGE_LAST_INDEX";
+    // 上次读取消息的偏移量
+    String MESSAGE_OFFSET = "ANNUAL_MEETING:MESSAGE_OFFSET";
 
     // 没有新消息时的上次读取消息的序号
-    String NO_NEW_MESSAGE_LAST_INDEX = "NO_NEW_MESSAGE_LAST_INDEX";
-
-    // 审核通过留言
-    String CHECK_PASS_MESSAGES = "CHECK_PASS_MESSAGES";
+    String NO_NEW_MESSAGE_OFFSET = "ANNUAL_MEETING:NO_NEW_MESSAGE_OFFSET";
 
     // 已被禁言人员ID
-    String BANNED_PERSON_ID = "BANNED_PERSON_ID";
+    String BANNED_PERSON_ID = "ANNUAL_MEETING:BANNED_PERSON_ID";
 
     // 投票开始时间
-    String VOTE_START_TIME = "VOTE_START_TIME";
+    String VOTE_START_TIME = "ANNUAL_MEETING:VOTE_START_TIME";
 
     // 投票结束时间
-    String VOTE_END_TIME = "VOTE_END_TIME";
+    String VOTE_END_TIME = "ANNUAL_MEETING:VOTE_END_TIME";
 
     // 单人投票次数
-    String PERSON_VOTE_NUM = "PERSON_VOTE_NUM";
+    String PERSON_VOTE_NUM = "ANNUAL_MEETING:PERSON_VOTE_NUM";
 
     // 年会开始时间
-    String ANNUAL_MEETING_START_TIME = "ANNUAL_MEETING_START_TIME";
+    String ANNUAL_MEETING_START_TIME = "ANNUAL_MEETING:ANNUAL_MEETING_START_TIME";
 
     // 年会结束时间
-    String ANNUAL_MEETING_END_TIME = "ANNUAL_MEETING_END_TIME";
+    String ANNUAL_MEETING_END_TIME = "ANNUAL_MEETING:ANNUAL_MEETING_END_TIME";
+
+    // 留言审批标志
+    String MESSAGE_CHECK_STATE = "ANNUAL_MEETING:MESSAGE_CHECK_STATE";
   }
 
   /**
@@ -129,14 +129,45 @@ public class Constant {
     String USER_INFO = "access_token=%s&openid=%s";
   }
 
-  // 中奖推送消息
+  /**
+   * 中奖推送消息
+   */
   public static final String LOTTERY_MESSAGE = "恭喜你，中奖啦！";
 
-  // 留言墙初始索引
-  public static final int MESSAGE_DEFAULT_INDEX = 0;
+  /**
+   * 留言墙初始索引
+   */
+  public static final int MESSAGE_DEFAULT_OFFSET = 0;
 
   public static final String EMPTY_STR = "";
 
   public static final String DEFAULT_CONTENT_TYPE = "application/json;charset=utf-8";
+
+  /**
+   * 投票
+   */
+  // 个人投票数
+  public static final int PERSON_VOTE_NUM = 1;
+
+  // 投票消息推送间隔(秒)
+  public static final int VOTE_TASK_INTERVAL = 5;
+
+  /**
+   * 微信
+   */
+  // 公众号appId
+  public static final String WECHAT_APP_ID = "wxcac24d26be875055";
+
+  // 公众号appSecret
+  public static final String WECHAT_APP_SECRET = "2394ac32e9591dbabd5644f6377e9d58";
+
+  /**
+   * 留言墙任务
+   */
+  // 留言墙消息推送间隔(秒)
+  public static final int MESSAGE_TASK_INTERVAL = 10;
+
+  // 留言墙消息推送数量
+  public static final int MESSAGE_TASK_NUM = 10;
 
 }

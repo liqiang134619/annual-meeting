@@ -36,7 +36,6 @@ public class Message extends BaseEntity {
   @Override
   public void fillDefaultProperty() {
     super.fillDefaultProperty();
-    this.setCheckStatus(Status.DISABLE);
     this.setIsTop(Status.DISABLE);
   }
 }

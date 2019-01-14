@@ -41,24 +41,27 @@
     id, message, person_id, check_status, check_time, is_top, top_time, create_time
   </sql>
 
-  <insert id="insert" parameterType="praise">
+  <insert id="insert" parameterType="praise" useGeneratedKeys="true" keyProperty="id">
     insert into message(message, person_id, check_status, check_time, is_top, top_time,
     create_time, update_time, status)
     values (#{message}, #{personId}, #{checkStatus}, #{checkTime}, #{isTop}, #{topTime},
     #{createTime}, #{updateTime}, #{status})
   </insert>
 
-  <select id="findSendMessages" resultMap="MessageVO" parameterType="long">
-    select m.id, m.message, m.create_time as pub_time, m.is_top, p.name, p.nickname, p.avatar_url
+  <select id="findSendMessages" resultMap="MessageVO" parameterType="limitVO">
+    select a.id, a.message, a.pub_time, a.is_top, a.name, a.nickname, a.avatar_url
+    from
+    (
+    select m.id, m.message, m.create_time as pub_time, m.is_top, p.name, p.nickname, p.avatar_url,
+    m.top_time, m.check_time
     from message m
     left join person p on m.person_id = p.id
     where m.status = 1 and p.status = 1 and
-    m.id in
-    <foreach collection="list" item="id" open="(" close=")" separator=",">
-      #{id}
-    </foreach>
+    m.check_status = 1
+    limit #{offset}, #{size}
+    ) a
     order by
-    m.top_time desc, m.check_time desc
+    a.top_time desc, a.check_time desc
   </select>
 
   <select id="countAll" resultType="long">
@@ -93,7 +96,14 @@
     from message
     where id = #{id} and status = 1
   </select>
-  
+
+  <select id="findSelfMessages" resultMap="BaseResultMap" parameterType="long">
+    select <include refid="BaseSql"/>
+    from message
+    where status = 1 and person_id = #{personId}
+    order by create_time
+  </select>
+
   <update id="updateSelective" parameterType="message">
     update message
     <set>

@@ -11,6 +11,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public final class HttpUtil {
 
+  private HttpUtil() {
+
+  }
+
   /**
    * 向指定URL发送GET方法的请求
    *

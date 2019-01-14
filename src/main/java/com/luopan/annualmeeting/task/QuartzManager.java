@@ -1,8 +1,8 @@
 package com.luopan.annualmeeting.task;
 
+import com.luopan.annualmeeting.common.Constant;
 import com.luopan.annualmeeting.common.Constant.QuartzJobName;
 import com.luopan.annualmeeting.common.Constant.RedisKey;
-import com.luopan.annualmeeting.config.CommConfig;
 import com.luopan.annualmeeting.task.job.MessageJob;
 import com.luopan.annualmeeting.task.job.ShowVoteJob;
 import com.luopan.annualmeeting.util.DateUtil;
@@ -30,9 +30,6 @@ public class QuartzManager {
   @Autowired
   private RedisUtil redisUtil;
 
-  @Autowired
-  private CommConfig commConfig;
-
   public void startJob() throws SchedulerException {
     startMessageJob(scheduler);
     startVoteJob(scheduler);
@@ -44,7 +41,7 @@ public class QuartzManager {
    */
   private int getMessageJobInterval() {
     return Tools.getInt(redisUtil.getString(RedisKey.MESSAGE_TASK_INTERVAL),
-        commConfig.getMessageTaskInterval());
+        Constant.MESSAGE_TASK_INTERVAL);
   }
 
   /**
@@ -66,8 +63,6 @@ public class QuartzManager {
 
   /**
    * 启动任务
-   * @param scheduler
-   * @throws SchedulerException
    */
   private void startVoteJob(Scheduler scheduler) throws SchedulerException {
     Date startTime = (Date) redisUtil.get(RedisKey.VOTE_START_TIME);
@@ -75,13 +70,13 @@ public class QuartzManager {
       JobDetail jobDetail = JobBuilder.newJob(ShowVoteJob.class).withIdentity(QuartzJobName.VOTE)
           .build();
       SimpleScheduleBuilder simpleScheduleBuilder = SimpleScheduleBuilder
-          .repeatSecondlyForever(commConfig.getVoteTaskInterval());
+          .repeatSecondlyForever(Constant.VOTE_TASK_INTERVAL);
       TriggerBuilder<SimpleTrigger> triggerBuilder = TriggerBuilder.newTrigger()
           .withIdentity(QuartzJobName.VOTE).withSchedule(simpleScheduleBuilder)
           .startAt(startTime);
       Date endTime = (Date) redisUtil.get(RedisKey.VOTE_END_TIME);
       if (endTime != null) {
-        triggerBuilder.endAt(DateUtil.plusSecond(endTime, commConfig.getVoteTaskInterval()));
+        triggerBuilder.endAt(DateUtil.plusSecond(endTime, Constant.VOTE_TASK_INTERVAL));
       }
       SimpleTrigger simpleTrigger = triggerBuilder.build();
       scheduler.scheduleJob(jobDetail, simpleTrigger);
