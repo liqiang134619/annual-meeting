@@ -37,8 +37,8 @@ public class AnnualMeetingController {
   @ApiOperation(value = "获取年会配置")
   @RequestMapping(value = "/state", method = RequestMethod.GET)
   public RespMsg getState(HttpServletRequest request) {
-    Long companyId = Tools.getLongFromRequest(request, Constant.COMMON_PARAM_COMPANY_ID);
     log.info("**********获取年会状态**********");
+    Long companyId = Tools.getLongFromRequest(request, Constant.COMMON_PARAM_COMPANY_ID);
     return annualMeetingService.getState(companyId);
   }
 

@@ -11,6 +11,8 @@ public interface RewardDao {
 
   int insert(Reward reward);
 
+  int updateByPrimaryKeySelective(Reward reward);
+
   List<Reward> findAll(long companyId);
 
   Reward findById(long id);

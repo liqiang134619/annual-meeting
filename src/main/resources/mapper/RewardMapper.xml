@@ -22,6 +22,31 @@
     VALUES (#{name}, #{level}, #{amount}, #{imageUrl}, #{companyId}, #{createTime}, #{updateTime}, #{status})
   </insert>
 
+  <update id="updateByPrimaryKeySelective" parameterType="reward">
+    update reward
+    <set>
+      <if test="name != null">
+        name = #{name},
+      </if>
+      <if test="level != null">
+        level = #{level},
+      </if>
+      <if test="amount != null">
+        amount = #{amount},
+      </if>
+      <if test="imageUrl != null">
+        image_url = #{imageUrl},
+      </if>
+      <if test="updateTime != null">
+        update_time = #{updateTime},
+      </if>
+      <if test="status != null">
+        status = #{status}
+      </if>
+    </set>
+    where id = #{id} and status = 1
+  </update>
+
   <select id="findAll" resultMap="BaseResultMap" parameterType="long">
     SELECT <include refid="BaseSql"/>
     FROM reward

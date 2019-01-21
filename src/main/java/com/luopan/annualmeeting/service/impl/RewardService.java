@@ -1,5 +1,7 @@
 package com.luopan.annualmeeting.service.impl;
 
+import com.luopan.annualmeeting.common.Constant.Status;
+import com.luopan.annualmeeting.common.ErrCode;
 import com.luopan.annualmeeting.common.RespMsg;
 import com.luopan.annualmeeting.dao.RewardDao;
 import com.luopan.annualmeeting.entity.Reward;
@@ -7,6 +9,7 @@ import com.luopan.annualmeeting.entity.vo.RewardVO;
 import com.luopan.annualmeeting.service.IRewardService;
 import com.luopan.annualmeeting.util.BeanUtil;
 import com.luopan.annualmeeting.util.ResultUtil;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,4 +51,15 @@ public class RewardService implements IRewardService {
     return ResultUtil.success(list);
   }
 
+  @Transactional
+  @Override
+  public RespMsg delete(Long id) {
+    Reward reward = new Reward();
+    reward.setStatus(Status.DISABLE).setId(id).setUpdateTime(new Date());
+    int rows = rewardDao.updateByPrimaryKeySelective(reward);
+    if (rows == 0) {
+      return ResultUtil.error(ErrCode.REWARD_DELETE_ERROR);
+    }
+    return ResultUtil.success();
+  }
 }

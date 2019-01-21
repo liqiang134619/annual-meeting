@@ -22,6 +22,7 @@ import com.luopan.annualmeeting.util.BeanUtil;
 import com.luopan.annualmeeting.util.RedisUtil;
 import com.luopan.annualmeeting.util.ResultUtil;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -185,12 +186,12 @@ public class ShowService implements IShowService {
   @Transactional
   @Override
   public RespMsg delete(Long id) {
-    if (id == null) {
-      return ResultUtil.error(ErrCode.ILLEGAL_ARGUMENT);
-    }
     Show show = new Show();
-    show.setId(id).setStatus(Status.DISABLE);
-    showDao.updateByPrimaryKeySelective(show);
+    show.setId(id).setStatus(Status.DISABLE).setUpdateTime(new Date());
+    int rows = showDao.updateByPrimaryKeySelective(show);
+    if (rows == 0) {
+      return ResultUtil.error(ErrCode.SHOW_DELETE_ERROR);
+    }
     return ResultUtil.success();
   }
 }

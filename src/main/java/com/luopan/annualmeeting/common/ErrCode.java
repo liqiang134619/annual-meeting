@@ -10,6 +10,7 @@ public enum ErrCode {
 
   // 奖品 1001-1050
   NO_REWARD(1001, "未找到奖品"),
+  REWARD_DELETE_ERROR(1002, "删除失败"),
 
   // 人员 1051-1100
   NO_PERSON(1051, "未找到人员"),
@@ -19,7 +20,6 @@ public enum ErrCode {
   HAD_BANNED(1055, "已被屏蔽"),
   GET_USER_INFO_ERROR(1056, "无法获取个人信息"),
   NO_ATTENTION_WECHAT(1057, "未关注公众号"),
-
 
   // 点赞 1101-1120
   HAD_PRAISE(1101, "重复点赞"),
@@ -59,6 +59,7 @@ public enum ErrCode {
   SHOW_NOT_FOUND(1341, "找不到节目"),
   SHOW_VOTE_NOT_START(1342, "该节目尚未开放投票"),
   SHOW_NOT_JOIN_VOTE(1343, "该节目不参与投票"),
+  SHOW_DELETE_ERROR(1344, "删除失败"),
   ;
 
   private int errCode;

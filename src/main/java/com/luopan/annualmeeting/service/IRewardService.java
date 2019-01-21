@@ -11,4 +11,6 @@ public interface IRewardService {
 
   RespMsg findNotLottery(Long companyId);
 
+  RespMsg delete(Long id);
+
 }
