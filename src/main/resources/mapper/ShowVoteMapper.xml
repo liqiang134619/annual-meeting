@@ -16,8 +16,8 @@
   </sql>
 
   <insert id="insert" parameterType="showVote">
-    insert into show_vote(show_id, person_id, create_time, update_time, status)
-    values (#{showId}, #{personId}, #{createTime}, #{updateTime}, #{status})
+    insert into show_vote(show_id, person_id, company_id, create_time, update_time, status)
+    values (#{showId}, #{personId}, #{companyId}, #{createTime}, #{updateTime}, #{status})
   </insert>
 
   <select id="findByPersonId" parameterType="long" resultMap="BaseResultMap">
@@ -26,5 +26,26 @@
     where status = 1 and
     person_id = #{personId}
   </select>
+
+  <select id="countByPersonId" resultType="int" parameterType="long">
+    select count(id)
+    from show_vote
+    where status = 1 and person_id = #{personId}
+  </select>
+
+  <select id="countByPersonIdAndShowId" resultType="int">
+    select count(id)
+    from show_vote
+    where status = 1 and person_id = #{personId} and show_id = #{showId}
+  </select>
+  
+  <insert id="insertList" parameterType="showVote">
+    insert into
+    show_vote(show_id, person_id, company_id, create_time, update_time, status)
+    values
+    <foreach collection="list" item="item" separator=",">
+      (#{item.showId}, #{item.personId}, #{item.companyId}, #{item.createTime}, #{item.updateTime}, #{item.status})
+    </foreach>
+  </insert>
 
 </mapper>

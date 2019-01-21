@@ -5,14 +5,17 @@ import com.luopan.annualmeeting.entity.vo.PraiseVO;
 import com.luopan.annualmeeting.entity.vo.ShowScoreVO;
 import com.luopan.annualmeeting.entity.vo.ShowVO;
 import com.luopan.annualmeeting.entity.vo.ShowVoteCountVO;
+import com.luopan.annualmeeting.entity.vo.ShowVoteNowVO;
 import com.luopan.annualmeeting.entity.vo.ShowVoteVO;
 import java.util.List;
 
 public interface IShowService {
 
-  RespMsg findAll();
+  RespMsg findAll(Long companyId);
 
   RespMsg insert(ShowVO showVO);
+
+  RespMsg voteNow(ShowVoteNowVO showVoteNowVO);
 
   RespMsg praise(PraiseVO praiseVO);
 
@@ -20,6 +23,8 @@ public interface IShowService {
 
   RespMsg findShowScorePraiseCommentVOList(long personId);
 
-  List<ShowVoteCountVO> findShowVoteCountVOList();
+  List<ShowVoteCountVO> findShowVoteCountVOList(Long companyId);
+
+  RespMsg delete(Long id);
 
 }

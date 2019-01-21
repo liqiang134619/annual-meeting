@@ -9,6 +9,7 @@
     <result property="performer" column="PERFORMER" jdbcType="VARCHAR"/>
     <result property="type" column="TYPE" jdbcType="VARCHAR"/>
     <result property="orderNum" column="ORDER_NUM" jdbcType="INTEGER"/>
+    <result property="vote" column="VOTE" jdbcType="INTEGER"/>
     <result property="createTime" column="CREATE_TIME" jdbcType="TIMESTAMP"/>
     <result property="updateTime" column="UPDATE_TIME" jdbcType="TIMESTAMP"/>
     <result property="status" column="STATUS" jdbcType="INTEGER"/>
@@ -37,18 +38,46 @@
   </resultMap>
 
   <sql id="BaseSql">
-    id, name, department, performer, type, order_num
+    id, name, department, performer, type, order_num, vote
   </sql>
 
   <insert id="insert" parameterType="show">
-    insert into `show`(name, department, performer, type, order_num, create_time, update_time, status)
-    values (#{name}, #{department}, #{performer}, #{type}, #{orderNum}, #{createTime}, #{updateTime}, #{status})
+    insert into `show`(name, department, performer, type, order_num, vote, company_id, create_time, update_time, status)
+    values (#{name}, #{department}, #{performer}, #{type}, #{orderNum}, #{vote}, #{companyId}, #{createTime}, #{updateTime}, #{status})
   </insert>
 
-  <select id="findAll" resultMap="BaseResultMap">
+  <update id="updateByPrimaryKeySelective" parameterType="show">
+    update `show`
+    <set>
+      <if test="name != null">
+        name = #{name},
+      </if>
+      <if test="department != null">
+        department = #{department},
+      </if>
+      <if test="performer != null">
+        performer = #{performer},
+      </if>
+      <if test="type != null">
+        type = #{type},
+      </if>
+      <if test="orderNum != null">
+        order_num = #{orderNum},
+      </if>
+      <if test="updateTime != null">
+        update_time = #{updateTime},
+      </if>
+      <if test="status != null">
+        status = #{status},
+      </if>
+    </set>
+    where id = #{id} and status = 1
+  </update>
+
+  <select id="findAll" resultMap="BaseResultMap" parameterType="long">
     select <include refid="BaseSql"/>
     from `show`
-    where status = 1
+    where status = 1 and company_id = #{companyId}
     order by order_num
   </select>
 
@@ -74,6 +103,19 @@
     where s.status = 1
     group by s.id
     order by s.order_num
+  </select>
+
+  <select id="findById" resultMap="BaseResultMap" parameterType="long">
+    select <include refid="BaseSql"/>
+    from `show`
+    where id = #{id} and status = 1
+  </select>
+
+  <select id="findVoteAbleList" resultMap="BaseResultMap" parameterType="long">
+    select <include refid="BaseSql"/>
+    from `show`
+    where status = 1 and company_id = #{companyId} and vote = 1
+    order by order_num
   </select>
 
 </mapper>

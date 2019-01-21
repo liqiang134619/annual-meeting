@@ -20,6 +20,8 @@ public class SignInPersonVO implements Serializable {
 
   private String nickname;
 
+  private String phone;
+
   private String avatarUrl;
 
   private Integer gender;

@@ -1,8 +1,7 @@
 package com.luopan.annualmeeting.service.impl;
 
-import com.luopan.annualmeeting.common.Constant;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.luopan.annualmeeting.common.Constant.RewardLevel;
-import com.luopan.annualmeeting.common.Constant.WebSocketMessageType;
 import com.luopan.annualmeeting.common.ErrCode;
 import com.luopan.annualmeeting.common.RespMsg;
 import com.luopan.annualmeeting.dao.LotteryDao;
@@ -14,22 +13,22 @@ import com.luopan.annualmeeting.entity.Reward;
 import com.luopan.annualmeeting.entity.vo.LotteryPersonRewardVO;
 import com.luopan.annualmeeting.entity.vo.LotteryPersonVO;
 import com.luopan.annualmeeting.entity.vo.LotteryRewardVO;
-import com.luopan.annualmeeting.entity.vo.WebSocketMessageVO;
+import com.luopan.annualmeeting.entity.vo.RewardLotteryVO;
 import com.luopan.annualmeeting.service.ILotteryService;
+import com.luopan.annualmeeting.util.BeanUtil;
 import com.luopan.annualmeeting.util.JsonUtil;
 import com.luopan.annualmeeting.util.ResultUtil;
-import com.luopan.annualmeeting.websocket.WebSocket;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 public class LotteryService implements ILotteryService {
@@ -42,9 +41,6 @@ public class LotteryService implements ILotteryService {
 
   @Autowired
   private LotteryDao lotteryDao;
-
-  @Autowired
-  private WebSocket webSocket;
 
   @Transactional
   @Override
@@ -115,13 +111,6 @@ public class LotteryService implements ILotteryService {
       lottery.setRewardId(reward.getId());
       lottery.fillDefaultProperty();
       lotteryDao.insert(lottery);
-
-      // 推送中奖通知
-      CompletableFuture.runAsync(() -> {
-        WebSocketMessageVO<String> webSocketMessageVO = new WebSocketMessageVO<>(
-            WebSocketMessageType.LOTTERY, Constant.LOTTERY_MESSAGE);
-        webSocket.sendMessageTo(JsonUtil.obj2String(webSocketMessageVO), person.getId());
-      });
     }
 
     return ResultUtil.success(lotteryPersonVOList);
@@ -146,4 +135,22 @@ public class LotteryService implements ILotteryService {
     return ResultUtil.success(list);
   }
 
+  @Transactional
+  @Override
+  public RespMsg save(RewardLotteryVO rewardLotteryVO) {
+    Long rewardId = rewardLotteryVO.getRewardId();
+    List<Long> personIdList = rewardLotteryVO.getPersonIds();
+    Long companyId = rewardLotteryVO.getCompanyId();
+    if (rewardId == null || BeanUtil.isEmpty(personIdList)) {
+      return ResultUtil.error(ErrCode.ILLEGAL_ARGUMENT);
+    }
+    List<Lottery> lotteryList = personIdList.stream().map(personId -> {
+      Lottery lottery = new Lottery();
+      lottery.setRewardId(rewardId).setPersonId(personId).setCompanyId(companyId)
+          .fillDefaultProperty();
+      return lottery;
+    }).collect(Collectors.toList());
+    lotteryDao.insertList(lotteryList);
+    return ResultUtil.success();
+  }
 }

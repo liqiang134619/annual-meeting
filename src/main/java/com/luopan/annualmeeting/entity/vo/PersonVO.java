@@ -35,4 +35,6 @@ public class PersonVO implements Serializable {
 
   private Date signTime;
 
+  private String companyName;
+
 }

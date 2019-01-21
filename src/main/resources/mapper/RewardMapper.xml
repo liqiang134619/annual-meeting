@@ -18,14 +18,14 @@
   </sql>
 
   <insert id="insert" parameterType="reward">
-    INSERT INTO reward(NAME, LEVEL, AMOUNT, IMAGE_URL, CREATE_TIME, UPDATE_TIME, STATUS)
-    VALUES (#{name}, #{level}, #{amount}, #{imageUrl}, #{createTime}, #{updateTime}, #{status})
+    INSERT INTO reward(NAME, LEVEL, AMOUNT, IMAGE_URL, company_id, CREATE_TIME, UPDATE_TIME, STATUS)
+    VALUES (#{name}, #{level}, #{amount}, #{imageUrl}, #{companyId}, #{createTime}, #{updateTime}, #{status})
   </insert>
 
-  <select id="findAll" resultMap="BaseResultMap">
+  <select id="findAll" resultMap="BaseResultMap" parameterType="long">
     SELECT <include refid="BaseSql"/>
     FROM reward
-    WHERE status = 1 AND level > 0
+    WHERE status = 1 and company_id = #{companyId}
     ORDER BY level
   </select>
 
@@ -35,10 +35,10 @@
     WHERE id = #{id}
   </select>
 
-  <select id="findNotLottery" resultMap="BaseResultMap">
+  <select id="findNotLottery" resultMap="BaseResultMap" parameterType="long">
     select <include refid="BaseSql"/>
     from reward r
-    where level > 0 and not exists (
+    where company_id = #{companyId} and not exists (
     select 1 from lottery l where r.id = l.reward_id
     )
   </select>

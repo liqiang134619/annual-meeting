@@ -11,6 +11,7 @@ import com.luopan.annualmeeting.util.RedisUtil;
 import com.luopan.annualmeeting.util.Tools;
 import com.luopan.annualmeeting.websocket.ServerManageWebSocket;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
@@ -30,31 +31,36 @@ public class MessageJob implements Job {
 
   @Override
   public void execute(JobExecutionContext jobExecutionContext) {
+    String jobName = jobExecutionContext.getJobDetail().getKey().getName();
+    String[] array = jobName.split(Constant.SPLITTER_COLON);
+    Long companyId = Tools.getLong(array[1]);
+
+    String keyNoNewMessageOffset =
+        RedisKey.NO_NEW_MESSAGE_OFFSET + Constant.SPLITTER_COLON + companyId;
+    String keyMessageOffset = RedisKey.MESSAGE_OFFSET + Constant.SPLITTER_COLON + companyId;
+
     boolean noNewMessages = false;
-    int num = Tools
-        .getInt(redisUtil.getString(RedisKey.MESSAGE_TASK_NUM), Constant.MESSAGE_TASK_NUM);
-    long offset = Tools
-        .getLong(redisUtil.getString(RedisKey.MESSAGE_OFFSET), Constant.MESSAGE_DEFAULT_OFFSET);
-    List<MessageVO> list = messageService.findSendMessages(offset, num);
+    int num = Optional.ofNullable(redisUtil
+        .get(RedisKey.MESSAGE_TASK_NUM + Constant.SPLITTER_COLON + companyId, Integer.class))
+        .orElse(Constant.MESSAGE_TASK_NUM);
+    long offset = Optional.ofNullable(redisUtil.get(keyMessageOffset, Integer.class))
+        .orElse(Constant.MESSAGE_DEFAULT_OFFSET);
+    List<MessageVO> list = messageService.findSendMessages(offset, num, companyId);
     if (list == null || list.isEmpty()) {
       offset = Tools
-          .getLong(redisUtil.getString(RedisKey.NO_NEW_MESSAGE_OFFSET),
-              Constant.MESSAGE_DEFAULT_OFFSET);
-      list = messageService.findSendMessages(offset, num);
+          .getLong(redisUtil.getString(keyNoNewMessageOffset), Constant.MESSAGE_DEFAULT_OFFSET);
+      list = messageService.findSendMessages(offset, num, companyId);
       if (list.isEmpty() && Constant.MESSAGE_DEFAULT_OFFSET != offset) {
         offset = Constant.MESSAGE_DEFAULT_OFFSET;
-        list = messageService.findSendMessages(offset, num);
+        list = messageService.findSendMessages(offset, num, companyId);
       }
       noNewMessages = true;
     }
     if (!list.isEmpty()) {
       WebSocketMessageVO<List<MessageVO>> vo = new WebSocketMessageVO<>(
           WebSocketMessageType.MESSAGE, list);
-      serverManageWebSocket.sendMessageAll(JsonUtil.obj2String(vo));
-      redisUtil
-          .setString(
-              noNewMessages ? RedisKey.NO_NEW_MESSAGE_OFFSET : RedisKey.MESSAGE_OFFSET,
-              offset + list.size() + "");
+      serverManageWebSocket.sendMessageAll(JsonUtil.obj2String(vo), companyId);
+      redisUtil.set(noNewMessages ? keyNoNewMessageOffset : keyMessageOffset, offset + list.size());
     }
   }
 

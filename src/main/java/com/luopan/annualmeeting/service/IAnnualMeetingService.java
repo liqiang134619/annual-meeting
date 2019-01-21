@@ -7,4 +7,6 @@ public interface IAnnualMeetingService {
 
   RespMsg setState(AnnualMeetingStateVO annualMeetingStateVO);
 
+  RespMsg getState(Long companyId);
+
 }

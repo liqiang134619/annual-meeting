@@ -14,4 +14,6 @@ public class ShowVoteVO implements Serializable {
 
   private Long showId;
 
+  private Long companyId;
+
 }

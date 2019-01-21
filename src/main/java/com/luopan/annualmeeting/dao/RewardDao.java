@@ -11,10 +11,10 @@ public interface RewardDao {
 
   int insert(Reward reward);
 
-  List<Reward> findAll();
+  List<Reward> findAll(long companyId);
 
   Reward findById(long id);
 
-  List<Reward> findNotLottery();
+  List<Reward> findNotLottery(long companyId);
 
 }

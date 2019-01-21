@@ -15,7 +15,7 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(value = Exception.class)
   @ResponseBody
   public RespMsg exception(Exception e) {
-    log.error("服务器错误", e);
+    log.error("服务异常", e);
     RespMsg<String> error = ResultUtil.error(ErrCode.SERVER_ERROR);
     return error;
   }

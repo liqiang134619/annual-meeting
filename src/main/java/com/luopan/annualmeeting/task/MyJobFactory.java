@@ -6,7 +6,6 @@ import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.scheduling.quartz.AdaptableJobFactory;
 import org.springframework.stereotype.Component;
 
-@Component
 public class MyJobFactory extends AdaptableJobFactory {
 
   @Autowired

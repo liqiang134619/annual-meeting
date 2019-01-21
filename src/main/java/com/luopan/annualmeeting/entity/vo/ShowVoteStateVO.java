@@ -1,5 +1,6 @@
 package com.luopan.annualmeeting.entity.vo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 import java.util.Date;
 import lombok.Data;
@@ -16,5 +17,8 @@ public class ShowVoteStateVO implements Serializable {
   private Date endTime;
 
   private Integer personVoteNum;
+
+  @JsonIgnore
+  private Long companyId;
 
 }

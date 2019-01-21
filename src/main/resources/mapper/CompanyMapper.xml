@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.luopan.annualmeeting.dao.CompanyDao">
+
+  <resultMap id="BaseResultMap" type="com.luopan.annualmeeting.entity.Company">
+    <id property="id" column="ID" jdbcType="BIGINT"/>
+    <id property="name" column="NAME" jdbcType="VARCHAR"/>
+    <id property="companyId" column="COMPANY_ID" jdbcType="BIGINT"/>
+    <id property="wechatAppId" column="WECHAT_APP_ID" jdbcType="VARCHAR"/>
+    <id property="wechatAppSecret" column="WECHAT_APP_SECRET" jdbcType="VARCHAR"/>
+    <result property="createTime" column="CREATE_TIME" jdbcType="TIMESTAMP"/>
+    <result property="updateTime" column="UPDATE_TIME" jdbcType="TIMESTAMP"/>
+    <result property="status" column="STATUS" jdbcType="INTEGER"/>
+  </resultMap>
+
+  <sql id="BaseSql">
+    id, name, company_id, wechat_app_id, wechat_app_secret
+  </sql>
+
+  <select id="findById" parameterType="long" resultMap="BaseResultMap">
+    select <include refid="BaseSql"/>
+    from company
+    where id = #{id} and status = 1
+  </select>
+
+  <select id="findByCompanyId" resultMap="BaseResultMap" parameterType="long">
+    select <include refid="BaseSql"/>
+    from company
+    where company_id = #{companyId} and status = 1
+  </select>
+
+  <select id="findAll" resultMap="BaseResultMap">
+    select <include refid="BaseSql"/>
+    from company
+    where status = 1
+  </select>
+
+</mapper>

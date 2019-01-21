@@ -1,5 +1,6 @@
 package com.luopan.annualmeeting.entity.vo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -19,5 +20,8 @@ public class RewardVO implements Serializable {
   private String name;
 
   private String imageUrl;
+
+  @JsonIgnore
+  private Long companyId;
 
 }

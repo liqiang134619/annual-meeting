@@ -28,4 +28,7 @@ public class Show extends BaseEntity {
   // 节目序号
   private Integer orderNum;
 
+  // 能否投票
+  private Integer vote;
+
 }

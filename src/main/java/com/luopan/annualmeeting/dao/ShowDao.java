@@ -11,12 +11,18 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ShowDao {
 
-  List<Show> findAll();
+  List<Show> findAll(long companyId);
 
   int insert(Show show);
 
   List<ShowScorePraiseCommentVO> findShowScorePraiseCommentVOList();
 
   List<ShowVoteCountVO> findShowVoteCountVOList();
+
+  List<Show> findVoteAbleList(long companyId);
+
+  int updateByPrimaryKeySelective(Show show);
+
+  Show findById(long id);
 
 }

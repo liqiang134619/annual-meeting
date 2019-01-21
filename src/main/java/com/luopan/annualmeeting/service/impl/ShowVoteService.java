@@ -1,23 +1,19 @@
 package com.luopan.annualmeeting.service.impl;
 
 import com.luopan.annualmeeting.common.Constant;
-import com.luopan.annualmeeting.common.Constant.QuartzJobName;
 import com.luopan.annualmeeting.common.Constant.RedisKey;
 import com.luopan.annualmeeting.common.ErrCode;
 import com.luopan.annualmeeting.common.RespMsg;
 import com.luopan.annualmeeting.dao.ShowVoteDao;
 import com.luopan.annualmeeting.entity.ShowVote;
-import com.luopan.annualmeeting.entity.vo.ShowVoteStateVO;
+import com.luopan.annualmeeting.entity.vo.ShowVoteRemainVO;
 import com.luopan.annualmeeting.entity.vo.ShowVoteVO;
 import com.luopan.annualmeeting.service.IShowVoteService;
-import com.luopan.annualmeeting.task.QuartzManager;
-import com.luopan.annualmeeting.task.job.ShowVoteJob;
+import com.luopan.annualmeeting.util.BeanUtil;
 import com.luopan.annualmeeting.util.RedisUtil;
 import com.luopan.annualmeeting.util.ResultUtil;
-import com.luopan.annualmeeting.util.Tools;
-import java.util.Date;
 import java.util.List;
-import org.springframework.beans.BeanUtils;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,68 +27,71 @@ public class ShowVoteService implements IShowVoteService {
   @Autowired
   private RedisUtil redisUtil;
 
-  @Autowired
-  private QuartzManager quartzManager;
-
   @Transactional
   @Override
   public RespMsg vote(ShowVoteVO showVoteVO) {
-    Date nowTime = new Date();
-    // 判断投票是否开始
-    Date startTime = (Date) redisUtil.get(RedisKey.VOTE_START_TIME);
-    if (startTime == null || startTime.compareTo(nowTime) >= 0) {
-      return ResultUtil.error(ErrCode.VOTE_NOT_STARTED);
+    Long personId = showVoteVO.getPersonId();
+    Long showId = showVoteVO.getShowId();
+    Long companyId = showVoteVO.getCompanyId();
+
+    if (personId == null || showId == null) {
+      return ResultUtil.error(ErrCode.ILLEGAL_ARGUMENT);
     }
 
-    // 判断投票是否结束
-    Date endTime = (Date) redisUtil.get(RedisKey.VOTE_END_TIME);
-    if (endTime != null && nowTime.compareTo(endTime) >= 0) {
-      return ResultUtil.error(ErrCode.VOTE_ENDED);
+    // 判断节目是否开启投票
+    boolean b = redisUtil
+        .sContain(RedisKey.VOTEABLE_SHOW + Constant.SPLITTER_COLON + companyId, showId);
+    if (!b) {
+      return ResultUtil.error(ErrCode.SHOW_VOTE_NOT_START);
     }
 
-    List<ShowVote> showVoteList = showVoteDao.findByPersonId(showVoteVO.getPersonId());
-    Integer personVoteNum = Tools
-        .getInt(redisUtil.getString(RedisKey.PERSON_VOTE_NUM), Constant.PERSON_VOTE_NUM);
-    // 判断有无剩余投票次数
-    if (showVoteList.size() == personVoteNum) {
-      return ResultUtil.error(ErrCode.NO_VOTE_NUM);
+    // 判断剩余票数
+    int remainVoteNum = getRemainVoteNum(personId, companyId);
+    if (remainVoteNum == 0) {
+      return ResultUtil.error(ErrCode.NO_VOTE_COUNT);
     }
 
-    // 判断是否重复投票
-    if (!showVoteList.isEmpty()) {
-      boolean anyMatch = showVoteList.stream()
-          .anyMatch(showVote -> showVote.getShowId().equals(showVoteVO.getShowId()));
-      if (anyMatch) {
-        return ResultUtil.error(ErrCode.HAD_VOTE);
-      }
+    // 判断重复投票
+    int count = showVoteDao.countByPersonIdAndShowId(personId, showId);
+    if (count > 0) {
+      return ResultUtil.error(ErrCode.HAD_VOTE);
     }
 
-    ShowVote showVote = new ShowVote();
-    BeanUtils.copyProperties(showVoteVO, showVote);
+    ShowVote showVote = BeanUtil.copyProperties(showVoteVO, ShowVote.class);
     showVote.fillDefaultProperty();
     showVoteDao.insert(showVote);
+
+    // 节目投票数+1
+    redisUtil.hIncr(RedisKey.SHOW_VOTE_NUM + Constant.SPLITTER_COLON + companyId, showId);
     return ResultUtil.success();
   }
 
   @Override
-  public RespMsg setState(ShowVoteStateVO showVoteStateVO) {
-    Date startTime = showVoteStateVO.getStartTime();
-    if (startTime != null) {
-      redisUtil.set(RedisKey.VOTE_START_TIME, startTime);
-      quartzManager
-          .saveJob(QuartzJobName.VOTE, ShowVoteJob.class, Constant.VOTE_TASK_INTERVAL);
+  public RespMsg my(Long personId) {
+    if (personId == null) {
+      return ResultUtil.error(ErrCode.ILLEGAL_ARGUMENT);
     }
-    Date endTime = showVoteStateVO.getEndTime();
-    if (endTime != null) {
-      redisUtil.set(RedisKey.VOTE_END_TIME, endTime);
-      quartzManager.saveJob(QuartzJobName.VOTE, ShowVoteJob.class, Constant.VOTE_TASK_INTERVAL,
-          endTime);
+    List<ShowVote> myVoteList = showVoteDao.findByPersonId(personId);
+    return ResultUtil.success(myVoteList);
+  }
+
+  @Override
+  public RespMsg remain(Long personId, Long companyId) {
+    if (personId == null) {
+      return ResultUtil.error(ErrCode.ILLEGAL_ARGUMENT);
     }
-    Integer personVoteNum = showVoteStateVO.getPersonVoteNum();
-    if (personVoteNum != null) {
-      redisUtil.set(RedisKey.PERSON_VOTE_NUM, personVoteNum.toString());
-    }
-    return ResultUtil.success();
+    ShowVoteRemainVO showVoteRemainVO = new ShowVoteRemainVO()
+        .setRemain(getRemainVoteNum(personId, companyId));
+    return ResultUtil.success(showVoteRemainVO);
+  }
+
+  private int getRemainVoteNum(Long personId, Long companyId) {
+    int count = showVoteDao.countByPersonId(personId);
+    Integer showVoteNum = Optional
+        .ofNullable(redisUtil
+            .get(RedisKey.PERSON_VOTE_NUM + Constant.SPLITTER_COLON + companyId, Integer.class))
+        .orElse(Constant.PERSON_VOTE_NUM);
+    return showVoteNum - count;
   }
 
 }

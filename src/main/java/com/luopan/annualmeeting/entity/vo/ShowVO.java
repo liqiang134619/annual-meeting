@@ -22,4 +22,10 @@ public class ShowVO implements Serializable {
 
   private Integer orderNum;
 
+  private Integer vote;
+
+  private Long companyId;
+
+  private Integer voteNow;
+
 }

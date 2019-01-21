@@ -18,4 +18,6 @@ public class WeChatSignInVO implements Serializable {
 
   private String openid;
 
+  private Long companyId;
+
 }

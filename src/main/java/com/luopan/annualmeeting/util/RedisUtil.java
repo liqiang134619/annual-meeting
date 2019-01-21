@@ -1,69 +1,48 @@
 package com.luopan.annualmeeting.util;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
 
+/**
+ * Created by lujw on 2019/1/17.
+ */
 @Component
-@SuppressWarnings("unchecked")
-public final class RedisUtil {
+public final class RedisUtil extends AbstractRedisUtil {
 
-  private RedisUtil() {
-
+  /**
+   * 普通缓存获取
+   */
+  public <T> T get(String key, Class<T> clazz) {
+    return execute(connection -> deserializeValue(connection.get(rawKey(key)), clazz));
   }
 
-  @Autowired
-  private RedisTemplate redisTemplate;
-
-  @Autowired
-  private StringRedisTemplate stringRedisTemplate;
+  public String getString(String key) {
+    return execute(connection -> deserializeStringValue(connection.get(rawKey(key))));
+  }
 
   /**
    * 删除缓存
    *
    * @param key 可以传一个值 或多个
    */
-  public void del(String... key) {
-    if (key != null && key.length > 0) {
-      if (key.length == 1) {
-        redisTemplate.delete(key[0]);
-      } else {
-        redisTemplate.delete(CollectionUtils.arrayToList(key));
-      }
-    }
+  public Long del(String... key) {
+    return execute(connection -> connection.del(rawKey(key)));
   }
-
-  /**
-   * 普通缓存获取
-   */
-  public Object get(String key) {
-    return key == null ? null : redisTemplate.opsForValue().get(key);
-  }
-
 
   /**
    * 普通缓存放入
    */
-  public void set(String key, Object value) {
-    redisTemplate.opsForValue().set(key, value);
+  public Boolean set(String key, Object value) {
+    return execute(connection -> connection.set(rawKey(key), rawValue(value)));
   }
 
   /**
-   * 缓存获取string
+   * 递增
    */
-  public String getString(String key) {
-    return key == null ? null : stringRedisTemplate.opsForValue().get(key);
-  }
-
-  /**
-   * 缓存放入string
-   */
-  public void setString(String key, String value) {
-    stringRedisTemplate.opsForValue().set(key, value);
+  public Long increment(String key) {
+    return execute(connection -> connection.incr(rawKey(key)));
   }
 
   //================set=================
@@ -71,128 +50,111 @@ public final class RedisUtil {
   /**
    * 根据key获取Set中的所有值
    */
-  public Set<Object> sGet(String key) {
-    return redisTemplate.opsForSet().members(key);
+  public <T> Set<T> sGet(String key, Class<T> clazz) {
+    return execute(connection -> deserializeSetValues(connection.sMembers(rawKey(key)), clazz));
   }
 
   /**
    * 根据value从一个set中查询,是否存在
    */
-  public boolean sHasKey(String key, Object value) {
-    return redisTemplate.opsForSet().isMember(key, value);
+  public Boolean sContain(String key, Object value) {
+    return execute(connection -> connection.sIsMember(rawKey(key), rawValue(value)));
   }
 
   /**
    * 将数据放入set缓存
    */
-  public void sSet(String key, Object... values) {
-    redisTemplate.opsForSet().add(key, values);
-  }
-
-  /**
-   * 获取set缓存的长度
-   *
-   * @param key 键
-   */
-  public long sGetSetSize(String key) {
-    return redisTemplate.opsForSet().size(key);
+  public Long sSet(String key, Object... values) {
+    return execute(connection -> connection.sAdd(rawKey(key), rawValue(values)));
   }
 
   /**
    * 移除值为value的
-   *
-   * @param key 键
-   * @param values 值 可以是多个
-   * @return 移除的个数
    */
-  public void setRemove(String key, Object... values) {
-    redisTemplate.opsForSet().remove(key, values);
+  public Long sRemove(String key, Object... values) {
+    return execute(connection -> connection.sRem(rawKey(key), rawValue(values)));
   }
 
   /**
-   * 判断是否包含指定值
-   * @param key 键
-   * @param value 值
-   * @return 是否包含
+   * 批量set
    */
-  public boolean sContain(String key, Object value) {
-    return redisTemplate.opsForSet().isMember(key, value);
+  public void pipSet(Map<String, Object> commands) {
+    if (commands != null && !commands.isEmpty()) {
+      execute(connection -> {
+        connection.openPipeline();
+        commands.forEach((key, value) -> connection.set(rawKey(key), rawValue(value)));
+        connection.closePipeline();
+        return null;
+      });
+    }
   }
-
 
   //====================================list=============================
 
   /**
    * 获取list缓存的内容
-   *
-   * @param key 键
-   * @param start 开始
-   * @param end 结束  0 到 -1代表所有值
    */
-  public List<Object> lGet(String key, long start, long end) {
-    return redisTemplate.opsForList().range(key, start, end);
+  public <T> List<T> lGet(String key, long start, long end, Class<T> clazz) {
+    return execute(
+        connection -> deserializeListValues(connection.lRange(rawKey(key), start, end), clazz));
   }
 
   /**
-   * 获取list缓存的长度
-   *
-   * @param key 键
+   * 将list放入缓存
    */
-  public long lGetListSize(String key) {
-    return redisTemplate.opsForList().size(key);
+  public Long lSet(String key, Object value) {
+    return execute(connection -> connection.rPushX(rawKey(key), rawValue(value)));
   }
 
   /**
    * 通过索引 获取list中的值
-   *
-   * @param key 键
-   * @param index 索引  index>=0时， 0 表头，1 第二个元素，依次类推；index<0时，-1，表尾，-2倒数第二个元素，依次类推
    */
-  public Object lGetIndex(String key, long index) {
-    return redisTemplate.opsForList().index(key, index);
+  public <T> T lGetIndex(String key, long index, Class<T> clazz) {
+    return execute(connection -> deserializeValue(connection.lIndex(rawKey(key), index), clazz));
+  }
+
+  //=====================================hash==============================
+
+  /**
+   * 通过key获取hash内容
+   */
+  public <T> T hGet(String key, Object hashKey, Class<T> clazz) {
+    return execute(
+        connection -> deserializeValue(connection.hGet(rawKey(key), rawValue(hashKey)), clazz));
   }
 
   /**
-   * 将list放入缓存
-   *
-   * @param key 键
-   * @param value 值
+   * 通过key设置hash内容
    */
-  public void lSet(String key, Object value) {
-    redisTemplate.opsForList().rightPush(key, value);
+  public Boolean hSet(String key, Object hashKey, Object hashValue) {
+    return execute(
+        connection -> connection.hSet(rawKey(key), rawValue(hashKey), rawValue(hashValue)));
   }
 
-  /**
-   * 将list放入缓存
-   *
-   * @param key 键
-   * @param value 值
-   */
-  public void lSet(String key, List<Object> value) {
-    redisTemplate.opsForList().rightPushAll(key, value);
+  // hGetAll hExists hKeys hValues hDel
+  public <K, V> Map<K, V> hGetAll(String key, Class<K> kClass, Class<V> vClass) {
+    return execute(
+        connection -> deserializeMapValues(connection.hGetAll(rawKey(key)), kClass, vClass));
   }
 
-  /**
-   * 根据索引修改list中的某条数据
-   *
-   * @param key 键
-   * @param index 索引
-   * @param value 值
-   */
-  public void lUpdateIndex(String key, long index, Object value) {
-    redisTemplate.opsForList().set(key, index, value);
+  public Boolean hExists(String key, Object hashKey) {
+    return execute(connection -> connection.hExists(rawKey(key), rawValue(hashKey)));
   }
 
-  /**
-   * 移除N个值为value
-   *
-   * @param key 键
-   * @param count 移除多少个
-   * @param value 值
-   * @return 移除的个数
-   */
-  public void lRemove(String key, long count, Object value) {
-    redisTemplate.opsForList().remove(key, count, value);
+  public <T> Set<T> hKeys(String key, Class<T> clazz) {
+    return execute(connection -> deserializeSetValues(connection.hKeys(rawKey(key)), clazz));
+  }
+
+  public <T> List<T> hVals(String key, Class<T> clazz) {
+    return execute(connection -> deserializeListValues(connection.hVals(rawKey(key)), clazz));
+  }
+
+  public Long hDel(String key, Object... hashKey) {
+    return execute(connection -> connection.hDel(rawKey(key), rawValue(hashKey)));
+  }
+
+  public Long hIncr(String key, Object hashKey) {
+    return execute(connection -> connection.hIncrBy(rawKey(key), rawValue(hashKey), 1L));
   }
 
 }

@@ -1,157 +1,257 @@
 package com.luopan.annualmeeting.task;
 
-import com.luopan.annualmeeting.common.Constant;
-import com.luopan.annualmeeting.common.Constant.QuartzJobName;
-import com.luopan.annualmeeting.common.Constant.RedisKey;
-import com.luopan.annualmeeting.task.job.MessageJob;
-import com.luopan.annualmeeting.task.job.ShowVoteJob;
-import com.luopan.annualmeeting.util.DateUtil;
-import com.luopan.annualmeeting.util.RedisUtil;
-import com.luopan.annualmeeting.util.Tools;
+import com.luopan.annualmeeting.util.BeanUtil;
 import java.util.Date;
+import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.quartz.Job;
 import org.quartz.JobBuilder;
+import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
+import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SimpleScheduleBuilder;
 import org.quartz.SimpleTrigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
+import org.quartz.TriggerUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
+@Slf4j
 @Component
 public class QuartzManager {
 
   @Autowired
   private Scheduler scheduler;
 
-  @Autowired
-  private RedisUtil redisUtil;
-
-  public void startJob() throws SchedulerException {
-    startMessageJob(scheduler);
-    startVoteJob(scheduler);
+  public void startScheduler() throws SchedulerException {
     scheduler.start();
   }
 
   /**
-   * 获取任务间隔
-   */
-  private int getMessageJobInterval() {
-    return Tools.getInt(redisUtil.getString(RedisKey.MESSAGE_TASK_INTERVAL),
-        Constant.MESSAGE_TASK_INTERVAL);
-  }
-
-  /**
-   * 启动任务
-   */
-  private void startMessageJob(Scheduler scheduler) throws SchedulerException {
-    // 通过JobBuilder构建JobDetail实例，JobDetail规定只能是实现Job接口的实例
-    // JobDetail 是具体Job实例
-    JobDetail jobDetail = JobBuilder.newJob(MessageJob.class).withIdentity(QuartzJobName.MESSAGE)
-        .build();
-    SimpleScheduleBuilder simpleScheduleBuilder = SimpleScheduleBuilder
-        .repeatSecondlyForever(getMessageJobInterval());
-    // TriggerBuilder 用于构建触发器实例
-    SimpleTrigger simpleTrigger = TriggerBuilder.newTrigger()
-        .withIdentity(QuartzJobName.MESSAGE)
-        .withSchedule(simpleScheduleBuilder).build();
-    scheduler.scheduleJob(jobDetail, simpleTrigger);
-  }
-
-  /**
-   * 启动任务
-   */
-  private void startVoteJob(Scheduler scheduler) throws SchedulerException {
-    Date startTime = (Date) redisUtil.get(RedisKey.VOTE_START_TIME);
-    if (startTime != null) {
-      JobDetail jobDetail = JobBuilder.newJob(ShowVoteJob.class).withIdentity(QuartzJobName.VOTE)
-          .build();
-      SimpleScheduleBuilder simpleScheduleBuilder = SimpleScheduleBuilder
-          .repeatSecondlyForever(Constant.VOTE_TASK_INTERVAL);
-      TriggerBuilder<SimpleTrigger> triggerBuilder = TriggerBuilder.newTrigger()
-          .withIdentity(QuartzJobName.VOTE).withSchedule(simpleScheduleBuilder)
-          .startAt(startTime);
-      Date endTime = (Date) redisUtil.get(RedisKey.VOTE_END_TIME);
-      if (endTime != null) {
-        triggerBuilder.endAt(DateUtil.plusSecond(endTime, Constant.VOTE_TASK_INTERVAL));
-      }
-      SimpleTrigger simpleTrigger = triggerBuilder.build();
-      scheduler.scheduleJob(jobDetail, simpleTrigger);
-    }
-  }
-
-  /**
-   * 修改任务
-   */
-  public boolean modifyMessageJob(int newInterval) {
-    try {
-      Date date = null;
-      TriggerKey triggerKey = new TriggerKey(QuartzJobName.MESSAGE);
-      SimpleTrigger simpleTrigger = (SimpleTrigger) scheduler.getTrigger(triggerKey);
-      long oldInterval = simpleTrigger.getRepeatInterval();
-      if (oldInterval != newInterval) {
-        SimpleScheduleBuilder builder = SimpleScheduleBuilder
-            .repeatSecondlyForever(newInterval);
-        SimpleTrigger trigger = TriggerBuilder.newTrigger()
-            .withIdentity(QuartzJobName.MESSAGE)
-            .withSchedule(builder).build();
-        date = scheduler.rescheduleJob(triggerKey, trigger);
-      }
-      return date != null;
-    } catch (SchedulerException e) {
-      e.printStackTrace();
-      return false;
-    }
-  }
-
-  /**
-   * 保存任务
+   * 新建任务
    *
    * @param jobName 任务名
    * @param jobClass 任务类型
    * @param interval 任务间隔
-   * @param endDate 任务结束时间
+   * @return true or false
    */
-  public void saveJob(String jobName, Class<? extends Job> jobClass, int interval, Date endDate) {
+  public Boolean newJob(String jobName, Class<? extends Job> jobClass, int interval) {
+    return newJob(jobName, jobClass, interval, null);
+  }
+
+  /**
+   * 新建任务
+   *
+   * @param jobName 任务名
+   * @param jobClass 任务类型
+   * @param interval 任务间隔
+   * @param params 参数
+   * @return true or false
+   */
+  public Boolean newJob(String jobName, Class<? extends Job> jobClass, Integer interval,
+      Map<String, Object> params) {
+    if (StringUtils.isEmpty(jobName) || jobClass == null || interval == null || interval < 0) {
+      return false;
+    }
+    JobBuilder jobBuilder = JobBuilder.newJob(jobClass).withIdentity(jobName);
+    if (BeanUtil.isNotEmpty(params)) {
+      jobBuilder.setJobData(map2JobDataMap(params));
+    }
+    JobDetail jobDetail = jobBuilder.build();
+    SimpleScheduleBuilder simpleScheduleBuilder = SimpleScheduleBuilder
+        .repeatSecondlyForever(interval);
+    SimpleTrigger simpleTrigger = TriggerBuilder.newTrigger().withIdentity(jobName)
+        .withSchedule(simpleScheduleBuilder).build();
+    try {
+      Date date = scheduler.scheduleJob(jobDetail, simpleTrigger);
+      return date != null;
+    } catch (SchedulerException e) {
+      log.error("新建定时任务错误", e);
+      e.printStackTrace();
+    }
+    return false;
+  }
+
+  /**
+   * 更新任务
+   *
+   * @param jobName 任务名
+   * @param interval 间隔
+   * @param params 参数
+   * @return true or false
+   */
+  public Boolean updateJob(String jobName, Integer interval, Map<String, Object> params) {
+    if (StringUtils.isEmpty(jobName) || interval == null || interval < 0) {
+      return false;
+    }
     TriggerKey triggerKey = TriggerKey.triggerKey(jobName);
-    SimpleScheduleBuilder builder = SimpleScheduleBuilder.repeatSecondlyForever(interval);
     try {
       SimpleTrigger trigger = (SimpleTrigger) scheduler.getTrigger(triggerKey);
       if (trigger == null) {
-        JobDetail jobDetail = JobBuilder.newJob(jobClass).withIdentity(jobName).build();
-        TriggerBuilder<SimpleTrigger> triggerBuilder = TriggerBuilder.newTrigger()
-            .withIdentity(triggerKey).withSchedule(builder);
-        if (endDate != null) {
-          triggerBuilder.endAt(DateUtil.plusSecond(endDate, interval));
-        }
-        trigger = triggerBuilder.build();
-        scheduler.scheduleJob(jobDetail, trigger);
-      } else {
-        TriggerBuilder<SimpleTrigger> triggerBuilder = trigger.getTriggerBuilder()
-            .withIdentity(triggerKey).withSchedule(builder);
-        if (endDate != null) {
-          triggerBuilder.endAt(DateUtil.plusSecond(endDate, interval));
-        }
-        trigger = triggerBuilder.build();
-        scheduler.rescheduleJob(triggerKey, trigger);
+        return false;
       }
+      SimpleScheduleBuilder builder = SimpleScheduleBuilder.repeatSecondlyForever(interval);
+      TriggerBuilder<SimpleTrigger> triggerBuilder = trigger.getTriggerBuilder()
+          .withIdentity(triggerKey).withSchedule(builder);
+      if (BeanUtil.isNotEmpty(params)) {
+        triggerBuilder.usingJobData(map2JobDataMap(params));
+      }
+      trigger = triggerBuilder.build();
+      Date date = scheduler.rescheduleJob(triggerKey, trigger);
+      return date != null;
     } catch (SchedulerException e) {
+      log.error("更新定时任务错误", e);
       e.printStackTrace();
     }
+    return false;
   }
 
   /**
-   * 保存任务
+   * 更新任务
    *
    * @param jobName 任务名
-   * @param jobClass 任务类型
-   * @param interval 任务间隔
+   * @param params 参数
+   * @return true or false
    */
-  public void saveJob(String jobName, Class<? extends Job> jobClass, int interval) {
-    saveJob(jobName, jobClass, interval, null);
+  public Boolean updateJob(String jobName, Map<String, Object> params) {
+    if (StringUtils.isEmpty(jobName) || BeanUtil.isEmpty(params)) {
+      return false;
+    }
+    TriggerKey triggerKey = TriggerKey.triggerKey(jobName);
+    try {
+      SimpleTrigger trigger = (SimpleTrigger) scheduler.getTrigger(triggerKey);
+      if (trigger == null) {
+        return false;
+      }
+      trigger = trigger.getTriggerBuilder()
+          .usingJobData(map2JobDataMap(params)).build();
+      Date date = scheduler.rescheduleJob(triggerKey, trigger);
+      return date != null;
+    } catch (SchedulerException e) {
+      log.error("更新定时任务错误", e);
+      e.printStackTrace();
+    }
+    return false;
+  }
+
+  /**
+   * 更新任务
+   *
+   * @param jobName 任务名
+   * @param interval 间隔
+   * @return true or false
+   */
+  public Boolean updateJob(String jobName, Integer interval) {
+    return updateJob(jobName, interval, null);
+  }
+
+  /**
+   * 删除任务
+   *
+   * @param jobName 任务名
+   * @return true or false
+   */
+  public Boolean deleteJob(String jobName) {
+    if (StringUtils.isEmpty(jobName)) {
+      return false;
+    }
+    JobKey jobKey = new JobKey(jobName);
+    try {
+      if (!scheduler.checkExists(jobKey)) {
+        return false;
+      }
+      return scheduler.deleteJob(jobKey);
+    } catch (SchedulerException e) {
+      log.error("删除定时任务错误", e);
+      e.printStackTrace();
+    }
+    return false;
+  }
+
+
+  /**
+   * 暂停任务
+   *
+   * @param jobName 任务名
+   * @return true or false
+   */
+  public Boolean pauseJob(String jobName) {
+    if (StringUtils.isEmpty(jobName)) {
+      return false;
+    }
+    JobKey jobKey = new JobKey(jobName);
+    try {
+      if (!scheduler.checkExists(jobKey)) {
+        return false;
+      }
+      scheduler.pauseJob(jobKey);
+      return true;
+    } catch (SchedulerException e) {
+      log.error("暂停定时任务错误", e);
+      e.printStackTrace();
+    }
+    return false;
+  }
+
+  /**
+   * 恢复任务
+   *
+   * @param jobName 任务名
+   * @return true or false
+   */
+  public Boolean resumeJob(String jobName) {
+    if (StringUtils.isEmpty(jobName)) {
+      return false;
+    }
+    JobKey jobKey = new JobKey(jobName);
+    try {
+      if (!scheduler.checkExists(jobKey)) {
+        return false;
+      }
+      scheduler.resumeJob(jobKey);
+      return true;
+    } catch (SchedulerException e) {
+      log.error("恢复定时任务错误", e);
+      e.printStackTrace();
+    }
+    return false;
+  }
+
+  /**
+   * 触发一次任务
+   *
+   * @param jobName 任务名
+   * @return true or false
+   */
+  public Boolean executeOnce(String jobName) {
+    if (StringUtils.isEmpty(jobName)) {
+      return false;
+    }
+    JobKey jobKey = new JobKey(jobName);
+    try {
+      if (!scheduler.checkExists(jobKey)) {
+        return false;
+      }
+      scheduler.triggerJob(jobKey);
+      return true;
+    } catch (SchedulerException e) {
+      log.error("运行一次定时任务错误", e);
+      e.printStackTrace();
+    }
+    return false;
+  }
+
+  private JobDataMap map2JobDataMap(Map<String, Object> params) {
+    if (params == null) {
+      return null;
+    }
+    JobDataMap jobDataMap = new JobDataMap();
+    params.forEach(jobDataMap::put);
+    return jobDataMap;
   }
 
 }

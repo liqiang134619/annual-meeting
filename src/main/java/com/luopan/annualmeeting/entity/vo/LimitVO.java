@@ -17,4 +17,6 @@ public class LimitVO implements Serializable {
 
   private Integer size;
 
+  private Long companyId;
+
 }

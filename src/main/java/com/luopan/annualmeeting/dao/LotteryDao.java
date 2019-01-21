@@ -22,4 +22,6 @@ public interface LotteryDao {
 
   List<LotteryRewardVO> findRewardByPersonId(long personId);
 
+  int insertList(List<Lottery> list);
+
 }

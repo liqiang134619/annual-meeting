@@ -42,9 +42,9 @@
   </sql>
 
   <insert id="insert" parameterType="praise" useGeneratedKeys="true" keyProperty="id">
-    insert into message(message, person_id, check_status, check_time, is_top, top_time,
+    insert into message(message, person_id, check_status, check_time, is_top, top_time, company_id,
     create_time, update_time, status)
-    values (#{message}, #{personId}, #{checkStatus}, #{checkTime}, #{isTop}, #{topTime},
+    values (#{message}, #{personId}, #{checkStatus}, #{checkTime}, #{isTop}, #{topTime}, #{companyId},
     #{createTime}, #{updateTime}, #{status})
   </insert>
 
@@ -55,13 +55,12 @@
     select m.id, m.message, m.create_time as pub_time, m.is_top, p.name, p.nickname, p.avatar_url,
     m.top_time, m.check_time
     from message m
-    left join person p on m.person_id = p.id
-    where m.status = 1 and p.status = 1 and
-    m.check_status = 1
+    left join person p on m.person_id = p.id and m.company_id = #{companyId}
+    where m.status = 1 and p.status = 1 and m.check_status = 1
+    order by m.check_time
     limit #{offset}, #{size}
     ) a
-    order by
-    a.top_time desc, a.check_time desc
+    order by a.top_time desc, a.check_time desc
   </select>
 
   <select id="countAll" resultType="long">
@@ -75,7 +74,8 @@
     p.name, p.nickname, p.avatar_url
     from message m
     left join person p on m.person_id = p.id
-    where p.status = 1 and m.status = 1
+    where p.status = 1 and m.status = 1 and
+    p.company_id = #{companyId} and m.company_id = #{companyId}
     <if test="personName != null and personName != ''">
       and locate(#{personName}, p.name) > 0
     </if>
@@ -102,6 +102,30 @@
     from message
     where status = 1 and person_id = #{personId}
     order by create_time
+  </select>
+
+  <select id="findRefreshMessages" resultMap="MessageVO" parameterType="messageGetVO">
+    select m.id, m.message, m.create_time as pub_time, p.name, p.nickname, p.avatar_url
+    from message m
+    left join person p on m.person_id = p.id and p.company_id = #{companyId}
+    where m.status = 1 and p.status = 1 and m.check_status = 1
+    <if test="lastId != null">
+      and m.id &gt; #{lastId}
+    </if>
+    order by m.id
+    <if test="lastId == null">
+      desc
+    </if>
+    limit 0, #{num}
+  </select>
+
+  <select id="findLoadMessages" resultMap="MessageVO" parameterType="messageGetVO">
+    select m.id, m.message, m.create_time as pub_time, p.name, p.nickname, p.avatar_url
+    from message m
+    left join person p on m.person_id = p.id and p.company_id = #{companyId}
+    where m.status = 1 and p.status = 1 and m.check_status = 1 and m.id &lt; #{lastId}
+    order by m.id desc
+    limit 0, #{num}
   </select>
 
   <update id="updateSelective" parameterType="message">

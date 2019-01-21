@@ -1,5 +1,7 @@
 package com.luopan.annualmeeting.util;
 
+import javax.servlet.http.HttpServletRequest;
+
 public final class Tools {
 
   private Tools() {
@@ -38,6 +40,17 @@ public final class Tools {
       return defaultNum;
     }
     return num;
+  }
+
+  public static Long getLongFromRequest(HttpServletRequest request, String name) {
+    if (request == null) {
+      return null;
+    }
+    String stringValue = request.getHeader(name);
+    if (stringValue == null) {
+      stringValue = request.getParameter(name);
+    }
+    return getLong(stringValue);
   }
 
 }

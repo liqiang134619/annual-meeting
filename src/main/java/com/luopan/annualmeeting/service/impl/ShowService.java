@@ -1,5 +1,7 @@
 package com.luopan.annualmeeting.service.impl;
 
+import com.luopan.annualmeeting.common.Constant;
+import com.luopan.annualmeeting.common.Constant.RedisKey;
 import com.luopan.annualmeeting.common.Constant.Status;
 import com.luopan.annualmeeting.common.ErrCode;
 import com.luopan.annualmeeting.common.RespMsg;
@@ -14,20 +16,24 @@ import com.luopan.annualmeeting.entity.vo.ShowScorePraiseCommentVO;
 import com.luopan.annualmeeting.entity.vo.ShowScoreVO;
 import com.luopan.annualmeeting.entity.vo.ShowVO;
 import com.luopan.annualmeeting.entity.vo.ShowVoteCountVO;
+import com.luopan.annualmeeting.entity.vo.ShowVoteNowVO;
 import com.luopan.annualmeeting.service.IShowService;
+import com.luopan.annualmeeting.util.BeanUtil;
 import com.luopan.annualmeeting.util.RedisUtil;
 import com.luopan.annualmeeting.util.ResultUtil;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 public class ShowService implements IShowService {
@@ -45,26 +51,52 @@ public class ShowService implements IShowService {
   private RedisUtil redisUtil;
 
   @Override
-  public RespMsg findAll() {
-    List<ShowVO> showVOList = new LinkedList<>();
-    List<Show> list = showDao.findAll();
-    if (list != null && !list.isEmpty()) {
-      list.forEach(show -> {
-        ShowVO showVO = new ShowVO();
-        BeanUtils.copyProperties(show, showVO);
-        showVOList.add(showVO);
-      });
-    }
+  public RespMsg findAll(Long companyId) {
+    List<Show> list = showDao.findAll(companyId);
+    List<ShowVO> showVOList = Optional.ofNullable(BeanUtil.copyProperties(list, ShowVO.class))
+        .orElse(Collections.emptyList());
+    Set<Long> showIds = Optional.ofNullable(redisUtil
+        .sGet(RedisKey.VOTEABLE_SHOW + Constant.SPLITTER_COLON + companyId, Long.class))
+        .orElse(Collections.emptySet());
+    showVOList.forEach(showVO -> showVO
+        .setVoteNow(showIds.contains(showVO.getId()) ? Status.ENABLE : Status.DISABLE));
     return ResultUtil.success(showVOList);
   }
 
   @Transactional
   @Override
   public RespMsg insert(ShowVO showVO) {
-    Show show = new Show();
-    BeanUtils.copyProperties(showVO, show);
+    if (StringUtils.isEmpty(showVO.getName()) || showVO.getVote() == null) {
+      return ResultUtil.error(ErrCode.ILLEGAL_ARGUMENT);
+    }
+    Show show = BeanUtil.copyProperties(showVO, Show.class);
     show.fillDefaultProperty();
     showDao.insert(show);
+    return ResultUtil.success();
+  }
+
+  @Override
+  public RespMsg voteNow(ShowVoteNowVO showVoteNowVO) {
+    Long showId = showVoteNowVO.getShowId();
+    Integer voteAble = showVoteNowVO.getVoteAble();
+    if (showId == null || voteAble == null) {
+      return ResultUtil.error(ErrCode.ILLEGAL_ARGUMENT);
+    }
+    Show show = showDao.findById(showId);
+    if (show == null) {
+      return ResultUtil.error(ErrCode.SHOW_NOT_FOUND);
+    }
+    if (show.getVote() == Status.DISABLE) {
+      return ResultUtil.error(ErrCode.SHOW_NOT_JOIN_VOTE);
+    }
+    if (voteAble == Status.ENABLE) {
+      redisUtil
+          .sSet(RedisKey.VOTEABLE_SHOW + Constant.SPLITTER_COLON + showVoteNowVO.getCompanyId(),
+              showId);
+    } else {
+      redisUtil.sRemove(
+          RedisKey.VOTEABLE_SHOW + Constant.SPLITTER_COLON + showVoteNowVO.getCompanyId(), showId);
+    }
     return ResultUtil.success();
   }
 
@@ -134,7 +166,31 @@ public class ShowService implements IShowService {
   }
 
   @Override
-  public List<ShowVoteCountVO> findShowVoteCountVOList() {
-    return showDao.findShowVoteCountVOList();
+  public List<ShowVoteCountVO> findShowVoteCountVOList(Long companyId) {
+    List<Show> shows = Optional.ofNullable(showDao.findVoteAbleList(companyId))
+        .orElse(Collections.emptyList());
+    Map<Long, Long> voteMap = Optional.ofNullable(redisUtil
+        .hGetAll(RedisKey.SHOW_VOTE_NUM + Constant.SPLITTER_COLON + companyId, Long.class,
+            Long.class)).orElse(new HashMap<>());
+    List<ShowVoteCountVO> list = shows.stream().map(show -> {
+      ShowVoteCountVO showVoteCountVO = BeanUtil.copyProperties(show, ShowVoteCountVO.class);
+      showVoteCountVO
+          .setVoteCount(Optional.ofNullable(voteMap.get(show.getId())).orElse(0L).intValue());
+      return showVoteCountVO;
+    }).collect(Collectors.toList());
+
+    return list;
+  }
+
+  @Transactional
+  @Override
+  public RespMsg delete(Long id) {
+    if (id == null) {
+      return ResultUtil.error(ErrCode.ILLEGAL_ARGUMENT);
+    }
+    Show show = new Show();
+    show.setId(id).setStatus(Status.DISABLE);
+    showDao.updateByPrimaryKeySelective(show);
+    return ResultUtil.success();
   }
 }

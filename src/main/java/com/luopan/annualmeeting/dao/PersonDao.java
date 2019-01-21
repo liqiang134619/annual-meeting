@@ -14,7 +14,7 @@ public interface PersonDao {
 
   int insert(Person person);
 
-  List<Person> findAll();
+  List<Person> findAll(long companyId);
 
   List<Person> findNoLotteryPeople();
 

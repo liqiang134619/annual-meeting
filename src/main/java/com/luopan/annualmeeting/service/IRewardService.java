@@ -7,8 +7,8 @@ public interface IRewardService {
 
   RespMsg addReward(RewardVO rewardVO);
 
-  RespMsg findAll();
+  RespMsg findAll(Long companyId);
 
-  RespMsg findNotLottery();
+  RespMsg findNotLottery(Long companyId);
 
 }

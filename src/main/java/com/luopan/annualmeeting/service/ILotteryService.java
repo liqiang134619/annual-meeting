@@ -1,6 +1,7 @@
 package com.luopan.annualmeeting.service;
 
 import com.luopan.annualmeeting.common.RespMsg;
+import com.luopan.annualmeeting.entity.vo.RewardLotteryVO;
 
 public interface ILotteryService {
 
@@ -11,5 +12,7 @@ public interface ILotteryService {
   RespMsg findRewardLotteryPeople(long rewardId);
 
   RespMsg findRewardByPersonId(long personId);
+
+  RespMsg save(RewardLotteryVO rewardLotteryVO);
 
 }

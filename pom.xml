@@ -22,6 +22,7 @@
     <jackson.version>2.9.5</jackson.version>
     <quartz.version>2.2.1</quartz.version>
     <swagger.version>2.8.0</swagger.version>
+    <okhttp.version>3.12.1</okhttp.version>
   </properties>
 
   <dependencies>
@@ -96,6 +97,13 @@
       <groupId>io.springfox</groupId>
       <artifactId>springfox-swagger-ui</artifactId>
       <version>${swagger.version}</version>
+    </dependency>
+
+    <!-- okhttp -->
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>okhttp</artifactId>
+      <version>${okhttp.version}</version>
     </dependency>
 
   </dependencies>

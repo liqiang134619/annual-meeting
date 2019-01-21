@@ -13,9 +13,9 @@ public interface IPersonService {
 
   RespMsg signIn(PersonVO personVO);
 
-  RespMsg findSignInPeople();
+  RespMsg findSignInPeople(Long companyId);
 
-  List<SignInPersonVO> findSignInPersonList();
+  List<SignInPersonVO> findSignInPersonList(Long companyId);
 
   RespMsg auth(WeChatSignInVO weChatSignInVO);
 

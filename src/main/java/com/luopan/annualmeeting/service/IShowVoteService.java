@@ -8,6 +8,8 @@ public interface IShowVoteService {
 
   RespMsg vote(ShowVoteVO showVoteVO);
 
-  RespMsg setState(ShowVoteStateVO showVoteStateVO);
+  RespMsg my(Long personId);
+
+  RespMsg remain(Long personId, Long companyId);
 
 }

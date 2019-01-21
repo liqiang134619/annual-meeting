@@ -1,7 +1,5 @@
 package com.luopan.annualmeeting.service.impl;
 
-import com.luopan.annualmeeting.common.Constant;
-import com.luopan.annualmeeting.common.Constant.OAuth2Param;
 import com.luopan.annualmeeting.common.Constant.OAuth2Url;
 import com.luopan.annualmeeting.common.Constant.RedisKey;
 import com.luopan.annualmeeting.common.Constant.SignType;
@@ -10,6 +8,7 @@ import com.luopan.annualmeeting.common.Constant.WebSocketMessageType;
 import com.luopan.annualmeeting.common.ErrCode;
 import com.luopan.annualmeeting.common.RespMsg;
 import com.luopan.annualmeeting.dao.PersonDao;
+import com.luopan.annualmeeting.entity.Company;
 import com.luopan.annualmeeting.entity.Person;
 import com.luopan.annualmeeting.entity.vo.AccessTokenVO;
 import com.luopan.annualmeeting.entity.vo.PersonIdVO;
@@ -24,6 +23,7 @@ import com.luopan.annualmeeting.entity.vo.WeChatSignInVO;
 import com.luopan.annualmeeting.entity.vo.WeChatUserInfoVO;
 import com.luopan.annualmeeting.entity.vo.WebSocketMessageVO;
 import com.luopan.annualmeeting.service.IPersonService;
+import com.luopan.annualmeeting.util.BeanUtil;
 import com.luopan.annualmeeting.util.HttpUtil;
 import com.luopan.annualmeeting.util.JsonUtil;
 import com.luopan.annualmeeting.util.RedisUtil;
@@ -33,7 +33,9 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -67,22 +69,21 @@ public class PersonService implements IPersonService {
   }
 
   @Override
-  public RespMsg findSignInPeople() {
-    List<SignInPersonVO> list = findSignInPersonList();
+  public RespMsg findSignInPeople(Long companyId) {
+    List<SignInPersonVO> list = findSignInPersonList(companyId);
     return ResultUtil.success(list);
   }
 
   @Override
-  public List<SignInPersonVO> findSignInPersonList() {
+  public List<SignInPersonVO> findSignInPersonList(Long companyId) {
     List<SignInPersonVO> signInPeople = new LinkedList<>();
-    List<Person> list = personDao.findAll();
-    if (list != null && !list.isEmpty()) {
-      list.forEach(person -> {
-        SignInPersonVO vo = new SignInPersonVO();
-        BeanUtils.copyProperties(person, vo);
-        vo.setSignInTime(person.getCreateTime());
-        signInPeople.add(vo);
-      });
+    List<Person> list = personDao.findAll(companyId);
+    if (!BeanUtil.isEmpty(list)) {
+      signInPeople = list.stream().map(person -> {
+        SignInPersonVO signInPersonVO = BeanUtil.copyProperties(person, SignInPersonVO.class);
+        signInPersonVO.setSignInTime(person.getCreateTime());
+        return signInPersonVO;
+      }).collect(Collectors.toList());
     }
     return signInPeople;
   }
@@ -90,10 +91,17 @@ public class PersonService implements IPersonService {
   @Transactional
   @Override
   public RespMsg auth(WeChatSignInVO weChatSignInVO) {
+    Long companyId = weChatSignInVO.getCompanyId();
+    Company company = redisUtil.hGet(RedisKey.COMPANY_MAP, companyId, Company.class);
+    if (company == null) {
+      return ResultUtil.error(ErrCode.ILLEGAL_ARGUMENT);
+    }
+
     String openid = weChatSignInVO.getOpenid();
     if (StringUtils.isEmpty(openid)) {
       // 获取openid
-      openid = getOpenidByCode(weChatSignInVO.getCode());
+      openid = getOpenidByCode(company.getWechatAppId(), company.getWechatAppSecret(),
+          weChatSignInVO.getCode());
       if (StringUtils.isEmpty(openid)) {
         return ResultUtil.error(ErrCode.INVALID_CODE);
       }
@@ -106,30 +114,42 @@ public class PersonService implements IPersonService {
     }
 
     // 获取accessToken
-    String accessTokenResult = HttpUtil.sendGet(OAuth2Url.ACCESS_TOKEN, String
-        .format(OAuth2Param.ACCESS_TOKEN, Constant.WECHAT_APP_ID, Constant.WECHAT_APP_SECRET));
+    String accessTokenResult = HttpUtil.get(String
+        .format(OAuth2Url.ACCESS_TOKEN, company.getWechatAppId(), company.getWechatAppSecret()));
     AccessTokenVO accessTokenVO = JsonUtil.string2Obj(accessTokenResult, AccessTokenVO.class);
+    if (accessTokenVO == null || StringUtils.isEmpty(accessTokenVO.getAccessToken())) {
+      return ResultUtil.error(ErrCode.GET_USER_INFO_ERROR);
+    }
     // 获取userInfo
-    String userInfoResult = HttpUtil.sendGet(OAuth2Url.USER_INFO, String
-        .format(OAuth2Param.USER_INFO, accessTokenVO.getAccessToken(), openid));
+    String userInfoResult = HttpUtil
+        .get(String.format(OAuth2Url.USER_INFO, accessTokenVO.getAccessToken(), openid));
     WeChatUserInfoVO weChatUserInfoVO = JsonUtil.string2Obj(userInfoResult, WeChatUserInfoVO.class);
+    if (weChatUserInfoVO == null) {
+      return ResultUtil.error(ErrCode.GET_USER_INFO_ERROR);
+    }
+    if (weChatUserInfoVO.getSubscribe() == 0) {
+      return ResultUtil.error(ErrCode.NO_ATTENTION_WECHAT);
+    }
+    if (StringUtils.isEmpty(weChatUserInfoVO.getNickname()) || StringUtils
+        .isEmpty(weChatUserInfoVO.getHeadImgUrl())) {
+      return ResultUtil.error(ErrCode.GET_USER_INFO_ERROR);
+    }
     Person person = new Person();
-    person.setAvatarUrl(weChatUserInfoVO.getHeadImgUrl());
-    person.setCity(weChatUserInfoVO.getCity());
-    person.setCountry(weChatUserInfoVO.getCountry());
-    person.setProvince(weChatUserInfoVO.getProvince());
-    person.setGender(weChatUserInfoVO.getSex());
-    person.setName(weChatSignInVO.getName());
-    person.setPhone(weChatSignInVO.getPhone());
-    person.setNickname(weChatUserInfoVO.getNickname());
-    person.setSignType(SignType.SCAN_CODE);
-    person.setOpenid(openid);
-    person.fillDefaultProperty();
+    person.setAvatarUrl(weChatUserInfoVO.getHeadImgUrl()).setCity(weChatUserInfoVO.getCity())
+        .setCountry(weChatUserInfoVO.getCountry())
+        .setProvince(weChatUserInfoVO.getProvince())
+        .setGender(weChatUserInfoVO.getSex())
+        .setName(weChatSignInVO.getName())
+        .setPhone(weChatSignInVO.getPhone())
+        .setNickname(weChatUserInfoVO.getNickname())
+        .setSignType(SignType.SCAN_CODE)
+        .setOpenid(openid)
+        .setCompanyId(weChatSignInVO.getCompanyId())
+        .fillDefaultProperty();
     personDao.insert(person);
 
-    PersonVO personVO = new PersonVO();
-    BeanUtils.copyProperties(person, personVO);
-    personVO.setSignTime(person.getCreateTime());
+    PersonVO personVO = BeanUtil.copyProperties(person, PersonVO.class)
+        .setSignTime(person.getCreateTime()).setCompanyName(company.getName());
 
     // 推送签到消息
     CompletableFuture.runAsync(() -> {
@@ -138,7 +158,7 @@ public class PersonService implements IPersonService {
       signInPersonVO.setSignInTime(person.getCreateTime());
       WebSocketMessageVO<List<SignInPersonVO>> webSocketMessageVO = new WebSocketMessageVO<>(
           WebSocketMessageType.SIGN_IN, Arrays.asList(signInPersonVO));
-      serverManageWebSocket.sendMessageAll(JsonUtil.obj2String(webSocketMessageVO));
+      serverManageWebSocket.sendMessageAll(JsonUtil.obj2String(webSocketMessageVO), companyId);
     });
 
     return ResultUtil.success(personVO);
@@ -146,17 +166,28 @@ public class PersonService implements IPersonService {
 
   @Override
   public RespMsg judgeSignIn(WeChatCodeVO weChatCodeVO) {
-    String openid = getOpenidByCode(weChatCodeVO.getCode());
+    Long companyId = weChatCodeVO.getCompanyId();
+    Company company = redisUtil.hGet(RedisKey.COMPANY_MAP, companyId, Company.class);
+    if (company == null) {
+      return ResultUtil.error(ErrCode.ILLEGAL_ARGUMENT);
+    }
+
+    String openid = getOpenidByCode(company.getWechatAppId(), company.getWechatAppSecret(),
+        weChatCodeVO.getCode());
     if (StringUtils.isEmpty(openid)) {
       return ResultUtil.error(ErrCode.INVALID_CODE);
     }
+
     List<Person> personList = personDao.findByOpenid(openid);
     if (personList != null && !personList.isEmpty()) {
-      Person person = personList.get(0);
-      PersonVO personVO = new PersonVO();
-      BeanUtils.copyProperties(person, personVO);
-      personVO.setSignTime(person.getCreateTime());
-      return ResultUtil.success(personVO);
+      Optional<Person> optionalPerson = personList.stream()
+          .filter(p -> companyId.equals(p.getCompanyId())).findFirst();
+      if (optionalPerson.isPresent()) {
+        Person person = optionalPerson.get();
+        PersonVO personVO = BeanUtil.copyProperties(person, PersonVO.class)
+            .setSignTime(person.getCreateTime()).setCompanyName(company.getName());
+        return ResultUtil.success(personVO);
+      }
     }
     WeChatOpenidVO weChatOpenidVO = new WeChatOpenidVO();
     weChatOpenidVO.setOpenid(openid);
@@ -164,13 +195,16 @@ public class PersonService implements IPersonService {
   }
 
   // 用微信code换取openid
-  private String getOpenidByCode(String code) {
-    if (StringUtils.isEmpty(code)) {
+  private String getOpenidByCode(String wechatAppId, String wechatAppSecret, String code) {
+    if (StringUtils.isEmpty(code) || StringUtils.isEmpty(wechatAppId) || StringUtils
+        .isEmpty(wechatAppSecret)) {
       return null;
     }
-    String result = HttpUtil.sendGet(OAuth2Url.OPENID, String
-        .format(OAuth2Param.OPENID, Constant.WECHAT_APP_ID, Constant.WECHAT_APP_SECRET, code));
-    WeChatAuthVO weChatAuthVO = JsonUtil.string2Obj(result, WeChatAuthVO.class);
+    String result = HttpUtil.get(
+        String
+            .format(OAuth2Url.OPENID, wechatAppId, wechatAppSecret, code));
+    WeChatAuthVO weChatAuthVO = Optional.ofNullable(JsonUtil.string2Obj(result, WeChatAuthVO.class))
+        .orElse(new WeChatAuthVO());
     return weChatAuthVO.getOpenid();
   }
 
@@ -183,14 +217,13 @@ public class PersonService implements IPersonService {
   @Transactional
   @Override
   public RespMsg banned(PersonSpeakStatusVO personSpeakStatusVO) {
-    Person person = new Person();
-    BeanUtils.copyProperties(personSpeakStatusVO, person);
+    Person person = BeanUtil.copyProperties(personSpeakStatusVO, Person.class);
     person.setUpdateTime(new Date());
     personDao.updateSelective(person);
     if (Status.DISABLE == personSpeakStatusVO.getSpeakStatus()) {
       redisUtil.sSet(RedisKey.BANNED_PERSON_ID, personSpeakStatusVO.getId());
     } else {
-      redisUtil.setRemove(RedisKey.BANNED_PERSON_ID, personSpeakStatusVO.getId());
+      redisUtil.sRemove(RedisKey.BANNED_PERSON_ID, personSpeakStatusVO.getId());
     }
     return ResultUtil.success();
   }

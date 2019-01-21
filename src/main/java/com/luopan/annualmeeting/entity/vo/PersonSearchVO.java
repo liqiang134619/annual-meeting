@@ -13,5 +13,7 @@ public class PersonSearchVO implements Serializable {
   private String name;
   
   private String speakStatus;
+
+  private Long companyId;
   
 }

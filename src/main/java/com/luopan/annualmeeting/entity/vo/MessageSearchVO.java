@@ -23,4 +23,6 @@ public class MessageSearchVO implements Serializable {
 
   private Integer checkStatus;
 
+  private Long companyId;
+
 }

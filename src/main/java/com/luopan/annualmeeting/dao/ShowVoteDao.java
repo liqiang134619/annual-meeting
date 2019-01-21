@@ -13,6 +13,10 @@ public interface ShowVoteDao {
 
   List<ShowVote> findByPersonId(long personId);
 
+  int countByPersonId(long personId);
 
+  int countByPersonIdAndShowId(long personId, long showId);
+
+  int insertList(List<ShowVote> list);
 
 }

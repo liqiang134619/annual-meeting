@@ -8,8 +8,8 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
-@Getter
-@Setter
+@Data
+@Accessors(chain = true)
 public abstract class BaseEntity implements Serializable {
 
   private Long id;
@@ -19,6 +19,8 @@ public abstract class BaseEntity implements Serializable {
   private Date updateTime;
 
   private Integer status;
+
+  private Long companyId;
 
   public void fillDefaultProperty() {
     this.createTime = new Date();

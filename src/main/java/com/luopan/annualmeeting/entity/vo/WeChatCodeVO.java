@@ -12,4 +12,6 @@ public class WeChatCodeVO implements Serializable {
 
   private String code;
 
+  private Long companyId;
+
 }
