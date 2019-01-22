@@ -10,6 +10,8 @@ public class LotteryPersonVO implements Serializable {
 
   private static final long serialVersionUID = -4453156728319314084L;
 
+  private Long id;
+
   private String name;
 
   private String nickname;

@@ -44,8 +44,8 @@ public class LotteryService implements ILotteryService {
 
   @Transactional
   @Override
-  public RespMsg lottery(long rewardId) {
-    Reward reward = rewardDao.findById(rewardId);
+  public RespMsg lottery(Long rewardId) {
+    /*Reward reward = rewardDao.findById(rewardId);
     if (reward == null) {
       return ResultUtil.error(ErrCode.NO_REWARD);
     }
@@ -61,15 +61,6 @@ public class LotteryService implements ILotteryService {
       personList = personList.stream().filter(person -> grandIds.contains(person.getId()))
           .collect(Collectors.toList());
     }
-    /*List<Lottery> lotteryList = lotteryDao.findAll();
-    // 排除已中奖人员
-    if (lotteryList != null && !lotteryList.isEmpty()) {
-      Set<Long> lotteryPersonIds = lotteryList.stream().map(Lottery::getPersonId)
-          .collect(Collectors.toSet());
-      personList = personList.stream()
-          .filter(person -> !lotteryPersonIds.contains(person.getId())).collect(
-              Collectors.toList());
-    }*/
 
     // 参与抽奖人数
     int personNum = personList.size();
@@ -113,24 +104,25 @@ public class LotteryService implements ILotteryService {
       lotteryDao.insert(lottery);
     }
 
-    return ResultUtil.success(lotteryPersonVOList);
+    return ResultUtil.success(lotteryPersonVOList);*/
+    return ResultUtil.success();
   }
 
   @Override
-  public RespMsg findAllLotteryPeople() {
-    List<LotteryPersonRewardVO> list = lotteryDao.findLotteryPeople();
+  public RespMsg findAllLotteryPeople(Long companyId) {
+    List<LotteryPersonRewardVO> list = lotteryDao.findLotteryPeople(companyId);
     return ResultUtil.success(list);
   }
 
   @Override
-  public RespMsg findRewardLotteryPeople(long rewardId) {
+  public RespMsg findRewardLotteryPeople(Long rewardId) {
     List<LotteryPersonVO> list = lotteryDao
         .findLotteryPeopleByRewardId(rewardId);
     return ResultUtil.success(list);
   }
 
   @Override
-  public RespMsg findRewardByPersonId(long personId) {
+  public RespMsg findRewardByPersonId(Long personId) {
     List<LotteryRewardVO> list = lotteryDao.findRewardByPersonId(personId);
     return ResultUtil.success(list);
   }

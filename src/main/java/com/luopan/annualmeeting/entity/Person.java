@@ -38,6 +38,9 @@ public class Person extends BaseEntity {
   // 城市
   private String city;
 
+  // 证件号码
+  private String cardNumber;
+
   // 签到类型 1扫码 2人脸识别
   private Integer signType;
 

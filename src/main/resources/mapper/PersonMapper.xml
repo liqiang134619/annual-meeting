@@ -42,8 +42,8 @@
   </sql>
 
   <insert id="insert" parameterType="person" useGeneratedKeys="true" keyProperty="id">
-    INSERT INTO person(NAME, NICKNAME, AVATAR_URL, GENDER, PHONE, COUNTRY, PROVINCE, CITY, SIGN_TYPE, OPENID, SPEAK_STATUS, COMPANY_ID, CREATE_TIME, UPDATE_TIME, STATUS)
-    VALUES (#{name}, #{nickname}, #{avatarUrl}, #{gender}, #{phone}, #{country}, #{province}, #{city}, #{signType}, #{openid}, #{speakStatus}, #{companyId}, #{createTime}, #{updateTime}, #{status})
+    INSERT INTO person(NAME, NICKNAME, AVATAR_URL, GENDER, PHONE, COUNTRY, PROVINCE, CITY, card_number, SIGN_TYPE, OPENID, SPEAK_STATUS, COMPANY_ID, CREATE_TIME, UPDATE_TIME, STATUS)
+    VALUES (#{name}, #{nickname}, #{avatarUrl}, #{gender}, #{phone}, #{country}, #{province}, #{city}, #{cardNumber}, #{signType}, #{openid}, #{speakStatus}, #{companyId}, #{createTime}, #{updateTime}, #{status})
   </insert>
 
   <select id="findAll" resultMap="BaseResultMap" parameterType="long">
@@ -53,28 +53,28 @@
     WHERE status = 1 and company_id = #{companyId}
   </select>
 
-  <select id="findNoLotteryPeople" resultMap="BaseResultMap">
+  <select id="findNoLotteryPeople" resultMap="BaseResultMap" parameterType="long">
     select
     <include refid="BaseSql"/>
     from person p
-    where status = 1 and
-    not exists (select 1 from lottery l where l.status = 1 and p.id = l.person_id)
+    where status = 1 and company_id = #{companyId} and
+    not exists (select 1 from lottery l where l.status = 1 and p.id = l.person_id and l.company_id = #{companyId})
   </select>
 
-  <select id="findJoinGrandPrizePersonIds" resultType="long">
+  <select id="findJoinGrandPrizePersonIds" resultType="long" parameterType="long">
     select distinct person_id
     from message
-    where status = 1
+    where status = 1 and company_id = #{companyId}
     union
     select distinct person_id
     from show_score
-    where status = 1
+    where status = 1 and company_id = #{companyId}
   </select>
 
-  <select id="countAll" resultType="long">
+  <select id="countAll" resultType="long" parameterType="long">
     select count(id)
     from person
-    where status = 1
+    where status = 1 and company_id = #{companyId}
   </select>
 
   <select id="search" resultMap="PersonVO" parameterType="personSearchVO">
@@ -112,8 +112,11 @@
       <if test="updateTime != null">
         update_time = #{updateTime},
       </if>
+      <if test="status != null">
+        status = #{status},
+      </if>
     </set>
-    where id = #{id}
+    where id = #{id} and status = 1
   </update>
 
 </mapper>

@@ -5,13 +5,13 @@ import com.luopan.annualmeeting.entity.vo.RewardLotteryVO;
 
 public interface ILotteryService {
 
-  RespMsg lottery(long rewardId);
+  RespMsg lottery(Long rewardId);
 
-  RespMsg findAllLotteryPeople();
+  RespMsg findAllLotteryPeople(Long companyId);
 
-  RespMsg findRewardLotteryPeople(long rewardId);
+  RespMsg findRewardLotteryPeople(Long rewardId);
 
-  RespMsg findRewardByPersonId(long personId);
+  RespMsg findRewardByPersonId(Long personId);
 
   RespMsg save(RewardLotteryVO rewardLotteryVO);
 

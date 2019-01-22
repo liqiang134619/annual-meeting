@@ -10,6 +10,8 @@ public class LotteryPersonRewardVO implements Serializable {
 
   private static final long serialVersionUID = -6782239686812564766L;
 
+  private Long id;
+
   private String name;
 
   private String nickname;
@@ -23,6 +25,10 @@ public class LotteryPersonRewardVO implements Serializable {
   private String province;
 
   private String city;
+
+  private String phone;
+
+  private Long rewardId;
 
   private String rewardName;
 

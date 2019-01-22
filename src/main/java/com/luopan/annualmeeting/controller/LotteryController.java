@@ -34,9 +34,10 @@ public class LotteryController {
 
   @ApiOperation(value = "查看所有中奖人员")
   @RequestMapping(value = "/findAllLotteryPeople", method = RequestMethod.GET)
-  public RespMsg findAllLotteryPeople() {
+  public RespMsg findAllLotteryPeople(HttpServletRequest request) {
     log.info("**********查看所有中奖人员**********");
-    return lotteryService.findAllLotteryPeople();
+    Long companyId = Tools.getLongFromRequest(request, Constant.COMMON_PARAM_COMPANY_ID);
+    return lotteryService.findAllLotteryPeople(companyId);
   }
 
   @ApiOperation(value = "查看单个奖励中奖人员")

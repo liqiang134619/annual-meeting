@@ -135,6 +135,9 @@ public class AnnualMeetingService implements IAnnualMeetingService {
         RedisKey.ANNUAL_MEETING_STATE + Constant.SPLITTER_COLON + companyId;
     AnnualMeetingStateVO annualMeetingStateVO = Optional.ofNullable(redisUtil
         .get(annualMeetingStateKey, AnnualMeetingStateVO.class)).orElse(new AnnualMeetingStateVO());
+    if (annualMeetingStateVO.getCompanyId() == null) {
+      annualMeetingStateVO.setCompanyId(companyId);
+    }
 
     String messageTaskIntervalKey =
         RedisKey.MESSAGE_TASK_INTERVAL + Constant.SPLITTER_COLON + companyId;

@@ -14,4 +14,6 @@ public class PersonSpeakStatusVO implements Serializable {
 
   private Integer speakStatus;
 
+  private Long companyId;
+
 }

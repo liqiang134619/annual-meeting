@@ -11,14 +11,14 @@ public class WeChatAuthVO implements Serializable {
 
   private static final long serialVersionUID = 2652791896473964322L;
 
-  @JsonProperty("accessToken")
-  private String access_token;
+  @JsonProperty("access_token")
+  private String accessToken;
 
-  @JsonProperty("expiresIn")
-  private String expires_in;
+  @JsonProperty("expires_in")
+  private String expiresIn;
 
-  @JsonProperty("refreshToken")
-  private String refresh_token;
+  @JsonProperty("refresh_token")
+  private String refreshToken;
 
   private String openid;
 

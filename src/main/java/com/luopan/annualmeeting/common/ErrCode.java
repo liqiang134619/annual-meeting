@@ -19,7 +19,9 @@ public enum ErrCode {
   INVALID_CODE(1054, "无效CODE"),
   HAD_BANNED(1055, "已被屏蔽"),
   GET_USER_INFO_ERROR(1056, "无法获取个人信息"),
-  NO_ATTENTION_WECHAT(1057, "未关注公众号"),
+  PERSON_BANNED_ERROR(1058, "禁言失败"),
+  PERSON_DELETE_ERROR(1059, "删除失败"),
+  PERSON_FACE_SIGN_IN_ERROR(1060, "人脸识别签到失败"),
 
   // 点赞 1101-1120
   HAD_PRAISE(1101, "重复点赞"),

@@ -115,11 +115,9 @@ public class Constant {
 
   public interface OAuth2Url {
 
-    String OPENID = "https://api.weixin.qq.com/sns/oauth2/access_token?appid=%s&secret=%s&code=%s&grant_type=authorization_code";
+    String AUTH = "https://api.weixin.qq.com/sns/oauth2/access_token?appid=%s&secret=%s&code=%s&grant_type=authorization_code";
 
-    String ACCESS_TOKEN = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=%s&secret=%s";
-
-    String USER_INFO = "https://api.weixin.qq.com/cgi-bin/user/info?access_token=%s&openid=%s";
+    String USER_INFO = "https://api.weixin.qq.com/sns/userinfo?access_token=%s&openid=%s&lang=zh_CN";
   }
 
   /**
@@ -180,5 +178,14 @@ public class Constant {
 
   // 单次操作返回消息数
   public static final int ACT_MESSAGE_NUM = 10;
+
+  /**
+   * 企业id
+   */
+  // 罗盘
+  public static final long COMPANY_ID_LP = 1;
+
+  // 招行
+  public static final long COMPANY_ID_ZH = 2;
 
 }

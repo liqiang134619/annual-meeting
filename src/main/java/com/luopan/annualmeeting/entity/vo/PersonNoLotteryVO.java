@@ -1,18 +1,17 @@
 package com.luopan.annualmeeting.entity.vo;
 
 import java.io.Serializable;
-import java.util.Date;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
 /**
- * 已签到人员
+ * Created by lujw on 2019/1/21.
  */
 @Data
 @Accessors(chain = true)
-public class SignInPersonVO implements Serializable {
+public class PersonNoLotteryVO implements Serializable {
 
-  private static final long serialVersionUID = -8422426335668030778L;
+  private static final long serialVersionUID = 4657591391445706283L;
 
   private Long id;
 
@@ -20,20 +19,16 @@ public class SignInPersonVO implements Serializable {
 
   private String nickname;
 
-  private String phone;
-
   private String avatarUrl;
 
   private Integer gender;
+
+  private String phone;
 
   private String country;
 
   private String province;
 
   private String city;
-
-  private Date signInTime;
-
-  private String companyName;
 
 }

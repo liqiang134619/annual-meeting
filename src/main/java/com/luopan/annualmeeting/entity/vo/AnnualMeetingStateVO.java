@@ -1,6 +1,5 @@
 package com.luopan.annualmeeting.entity.vo;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 import java.util.Date;
 import lombok.Data;
@@ -27,7 +26,7 @@ public class AnnualMeetingStateVO implements Serializable {
   // 手机端地址
   private String mobileUrl;
 
-  @JsonIgnore
+  // 企业id
   private Long companyId;
 
   // 消息间隔时间

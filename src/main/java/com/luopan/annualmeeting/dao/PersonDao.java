@@ -16,11 +16,11 @@ public interface PersonDao {
 
   List<Person> findAll(long companyId);
 
-  List<Person> findNoLotteryPeople();
+  List<Person> findNoLotteryPeople(long companyId);
 
-  Set<Long> findJoinGrandPrizePersonIds();
+  Set<Long> findJoinGrandPrizePersonIds(long companyId);
 
-  long countAll();
+  long countAll(long companyId);
 
   List<PersonVO> search(PersonSearchVO personSearchVO);
 
