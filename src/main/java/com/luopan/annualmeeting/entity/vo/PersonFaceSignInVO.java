@@ -15,8 +15,6 @@ public class PersonFaceSignInVO {
 
   private String name;
 
-  private String avatarUrl;
-
   private String cardNumber;
 
   @DateTimeFormat(pattern = DateUtil.DATE_TIME_PATTERN)

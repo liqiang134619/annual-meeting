@@ -13,6 +13,7 @@
     <result property="country" column="COUNTRY" jdbcType="VARCHAR"/>
     <result property="province" column="PROVINCE" jdbcType="VARCHAR"/>
     <result property="city" column="CITY" jdbcType="VARCHAR"/>
+    <result property="cardNumber" column="CARD_NUMBER" jdbcType="VARCHAR"/>
     <result property="signType" column="SIGN_TYPE" jdbcType="INTEGER"/>
     <result property="openid" column="OPENID" jdbcType="VARCHAR"/>
     <result property="companyId" column="COMPANY_ID" jdbcType="BIGINT"/>
@@ -38,7 +39,7 @@
   </resultMap>
 
   <sql id="BaseSql">
-    ID, NAME, NICKNAME, AVATAR_URL, GENDER, PHONE, COUNTRY, PROVINCE, CITY, SIGN_TYPE, OPENID, COMPANY_ID, SPEAK_STATUS, CREATE_TIME
+    ID, NAME, NICKNAME, AVATAR_URL, GENDER, PHONE, COUNTRY, PROVINCE, CITY, CARD_NUMBER, SIGN_TYPE, OPENID, COMPANY_ID, SPEAK_STATUS, CREATE_TIME
   </sql>
 
   <insert id="insert" parameterType="person" useGeneratedKeys="true" keyProperty="id">
@@ -72,14 +73,38 @@
     where status = 1 and company_id = #{companyId}
   </select>
 
-  <select id="countAll" resultType="long" parameterType="long">
+  <select id="count" resultType="long" parameterType="personExampleVO">
     select count(id)
     from person
-    where status = 1 and company_id = #{companyId}
+    where status = 1
+    <if test="companyId != null">
+      and company_id = #{companyId}
+    </if>
+    <if test="cardNumber != null">
+      and card_number = #{cardNumber}
+    </if>
+    <if test="openid != null">
+      and openid = #{openid}
+    </if>
+  </select>
+
+  <select id="findByExample" resultMap="BaseResultMap" parameterType="personExampleVO">
+    select <include refid="BaseSql"/>
+    from person
+    where status = 1
+    <if test="companyId != null">
+      and company_id = #{companyId}
+    </if>
+    <if test="cardNumber != null">
+      and card_number = #{cardNumber}
+    </if>
+    <if test="openid != null">
+      and openid = #{openid}
+    </if>
   </select>
 
   <select id="search" resultMap="PersonVO" parameterType="personSearchVO">
-    select id, name, nickname, avatar_url, gender, phone, country, province, city, sign_type,
+    select id, name, nickname, avatar_url, gender, phone, country, province, city, card_number, sign_type,
     speak_status, create_time as sign_time
     from person
     where status = 1 and company_id = #{companyId}
@@ -91,21 +116,35 @@
     </if>
   </select>
 
-  <select id="findByOpenid" resultMap="BaseResultMap" parameterType="string">
-    select
-    <include refid="BaseSql"/>
-    from person
-    where status = 1 and openid = #{openid}
-  </select>
-
   <update id="updateSelective" parameterType="person">
     update person
     <set>
-      <if test="name != null and name != ''">
+      <if test="name != null">
         name = #{name},
       </if>
-      <if test="phone != null and phone != ''">
+      <if test="phone != null">
         phone = #{phone},
+      </if>
+      <if test="avatarUrl != null">
+        avatar_url = #{avatarUrl},
+      </if>
+      <if test="nickname != null">
+        nickname = #{nickname},
+      </if>
+      <if test="country != null">
+        country = #{country},
+      </if>
+      <if test="province != null">
+        province = #{province},
+      </if>
+      <if test="city != null">
+        city = #{city},
+      </if>
+      <if test="cardNumber != null">
+        card_number = #{cardNumber},
+      </if>
+      <if test="openid != null">
+        openid = #{openid},
       </if>
       <if test="speakStatus != null">
         speak_status = #{speakStatus},

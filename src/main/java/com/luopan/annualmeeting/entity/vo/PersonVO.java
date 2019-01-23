@@ -29,6 +29,8 @@ public class PersonVO implements Serializable {
 
   private String city;
 
+  private String cardNumber;
+
   private Integer signType;
 
   private Integer speakStatus;

@@ -1,6 +1,7 @@
 package com.luopan.annualmeeting.dao;
 
 import com.luopan.annualmeeting.entity.Person;
+import com.luopan.annualmeeting.entity.vo.PersonExampleVO;
 import com.luopan.annualmeeting.entity.vo.PersonSearchVO;
 import com.luopan.annualmeeting.entity.vo.PersonVO;
 import java.util.List;
@@ -20,12 +21,12 @@ public interface PersonDao {
 
   Set<Long> findJoinGrandPrizePersonIds(long companyId);
 
-  long countAll(long companyId);
+  long count(PersonExampleVO personExampleVO);
+
+  List<Person> findByExample(PersonExampleVO personExampleVO);
 
   List<PersonVO> search(PersonSearchVO personSearchVO);
 
   int updateSelective(Person person);
-
-  List<Person> findByOpenid(String openid);
 
 }

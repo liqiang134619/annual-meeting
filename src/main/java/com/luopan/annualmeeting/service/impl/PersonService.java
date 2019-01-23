@@ -11,6 +11,7 @@ import com.luopan.annualmeeting.common.RespMsg;
 import com.luopan.annualmeeting.dao.PersonDao;
 import com.luopan.annualmeeting.entity.Company;
 import com.luopan.annualmeeting.entity.Person;
+import com.luopan.annualmeeting.entity.vo.PersonExampleVO;
 import com.luopan.annualmeeting.entity.vo.PersonFaceSignInVO;
 import com.luopan.annualmeeting.entity.vo.PersonIdVO;
 import com.luopan.annualmeeting.entity.vo.PersonNoLotteryVO;
@@ -59,11 +60,9 @@ public class PersonService implements IPersonService {
   @Transactional
   public RespMsg faceSignIn(PersonFaceSignInVO personFaceSignInVO) {
     String name = personFaceSignInVO.getName();
-    String avatarUrl = personFaceSignInVO.getAvatarUrl();
     String cardNumber = personFaceSignInVO.getCardNumber();
     Date enterTime = personFaceSignInVO.getEnterTime();
-    if (StringUtils.isEmpty(name) || StringUtils.isEmpty(avatarUrl) || StringUtils
-        .isEmpty(cardNumber) || enterTime == null) {
+    if (StringUtils.isEmpty(name) || StringUtils.isEmpty(cardNumber) || enterTime == null) {
       return ResultUtil.error(ErrCode.ILLEGAL_ARGUMENT);
     }
 
@@ -73,11 +72,23 @@ public class PersonService implements IPersonService {
       return ResultUtil.error(ErrCode.PERSON_CARD_NUMBER_ERROR);
     }
 
-    // 从身份证中获取性别
+    // 判断是否已签到
+    long count = personDao
+        .count(
+            new PersonExampleVO().setCompanyId(Constant.COMPANY_ID_LP).setCardNumber(cardNumber));
+    if (count != 0) {
+      return ResultUtil.error(ErrCode.HAD_SIGN_IN);
+    }
+
+    // 从身份证中获取性别并设置头像
+    String avatarUrl = Constant.AVATAR_MEN;
     Integer gender = Tools.getGenderFromCardNumber(cardNumber);
+    if (gender != null && gender == Constant.GENDER_WOMEN) {
+      avatarUrl = Constant.AVATAR_WOMEN;
+    }
 
     Person person = BeanUtil.copyProperties(personFaceSignInVO, Person.class);
-    person.setNickname(name).setSpeakStatus(Status.ENABLE).setGender(gender)
+    person.setNickname(name).setSpeakStatus(Status.ENABLE).setGender(gender).setAvatarUrl(avatarUrl)
         .setSignType(SignType.FACE_RECOGNITION).setCompanyId(Constant.COMPANY_ID_LP)
         .setCreateTime(enterTime).setUpdateTime(enterTime).setStatus(Status.ENABLE);
 
@@ -133,20 +144,17 @@ public class PersonService implements IPersonService {
     }
 
     // 判断是否已签到
-    List<Person> personList = personDao.findByOpenid(weChatAuthVO.getOpenid());
+    List<Person> personList = personDao.findByExample(
+        BeanUtil.copyProperties(weChatCodeVO, PersonExampleVO.class)
+            .setOpenid(weChatAuthVO.getOpenid()));
     if (BeanUtil.isNotEmpty(personList)) {
-      List<Person> companyPersonList = personList.stream()
-          .filter(p -> companyId.equals(p.getCompanyId()))
-          .collect(Collectors.toList());
-      if (BeanUtil.isNotEmpty(companyPersonList)) {
-        Person person = companyPersonList.get(0);
-        SignInPersonVO signInPersonVO = BeanUtil.copyProperties(person, SignInPersonVO.class)
-            .setSignInTime(person.getCreateTime()).setCompanyName(company.getName());
-        return ResultUtil.success(signInPersonVO);
-      }
+      Person person = personList.get(0);
+      SignInPersonVO signInPersonVO = BeanUtil.copyProperties(person, SignInPersonVO.class)
+          .setSignInTime(person.getCreateTime()).setCompanyName(company.getName());
+      return ResultUtil.success(signInPersonVO);
     }
 
-    // 未签到
+    // 未签到或者人脸识别签到初次扫描二维码
     // 获取userInfo
     String userInfoResult = HttpUtil
         .get(String
@@ -157,7 +165,31 @@ public class PersonService implements IPersonService {
       return ResultUtil.error(ErrCode.GET_USER_INFO_ERROR);
     }
 
-    // 入库
+    // 如果有身份证代表人脸识别签到
+    if (!StringUtils.isEmpty(weChatCodeVO.getCardNumber())) {
+      personList = personDao.findByExample(new PersonExampleVO().setCompanyId(companyId)
+          .setCardNumber(weChatCodeVO.getCardNumber()));
+      if (BeanUtil.isEmpty(personList)) {
+        return ResultUtil.error(ErrCode.PERSON_FACE_SIGN_IN_NOT_FOUND);
+      }
+      // 更新用户信息
+      Person person = personList.get(0);
+      person.setAvatarUrl(weChatUserInfoVO.getHeadimgurl())
+          .setNickname(weChatUserInfoVO.getNickname()).setOpenid(weChatUserInfoVO.getOpenid())
+          .setCountry(weChatUserInfoVO.getCountry()).setCity(weChatUserInfoVO.getCity())
+          .setProvince(weChatUserInfoVO.getProvince()).setUpdateTime(now);
+      personDao.updateSelective(person);
+
+      SignInPersonVO signInPersonVO = BeanUtil.copyProperties(person, SignInPersonVO.class)
+          .setSignInTime(person.getCreateTime()).setCompanyName(company.getName());
+
+      // 推送签到消息
+      sendSignInSuccessMessage(signInPersonVO, companyId);
+
+      return ResultUtil.success(signInPersonVO);
+    }
+
+    // 未签到
     Person person = new Person();
     person.setAvatarUrl(weChatUserInfoVO.getHeadimgurl()).setCity(weChatUserInfoVO.getCity())
         .setCountry(weChatUserInfoVO.getCountry())
@@ -178,13 +210,24 @@ public class PersonService implements IPersonService {
         .setSignInTime(now).setCompanyName(company.getName());
 
     // 推送签到消息
-    CompletableFuture.runAsync(() -> {
-      WebSocketMessageVO<List<SignInPersonVO>> webSocketMessageVO = new WebSocketMessageVO<>(
-          WebSocketMessageType.SIGN_IN, Arrays.asList(signInPersonVO));
-      serverManageWebSocket.sendMessageAll(JsonUtil.obj2String(webSocketMessageVO), companyId);
-    });
+    sendSignInSuccessMessage(signInPersonVO, companyId);
 
     return ResultUtil.success(signInPersonVO);
+  }
+
+  /**
+   * 推送签到消息
+   *
+   * @param signInPersonVO 签到人员信息
+   */
+  private void sendSignInSuccessMessage(SignInPersonVO signInPersonVO, Long companyId) {
+    if (signInPersonVO != null && companyId != null) {
+      CompletableFuture.runAsync(() -> {
+        WebSocketMessageVO<List<SignInPersonVO>> webSocketMessageVO = new WebSocketMessageVO<>(
+            WebSocketMessageType.SIGN_IN, Arrays.asList(signInPersonVO));
+        serverManageWebSocket.sendMessageAll(JsonUtil.obj2String(webSocketMessageVO), companyId);
+      });
+    }
   }
 
   @Override

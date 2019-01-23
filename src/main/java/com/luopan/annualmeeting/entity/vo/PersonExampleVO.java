@@ -1,19 +1,19 @@
 package com.luopan.annualmeeting.entity.vo;
 
-import java.io.Serializable;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
+/**
+ * Created by lujw on 2019/1/23.
+ */
 @Data
 @Accessors(chain = true)
-public class WeChatCodeVO implements Serializable {
-
-  private static final long serialVersionUID = -2215039708190810097L;
-
-  private String code;
+public class PersonExampleVO {
 
   private Long companyId;
 
   private String cardNumber;
+
+  private String openid;
 
 }

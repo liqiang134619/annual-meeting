@@ -199,10 +199,21 @@ public class Constant {
   /**
    * 性别
    */
+  // 未知
+  public static final int GENDER_NONE = 0;
+
   // 男
   public static final int GENDER_MEN = 1;
 
   // 女
   public static final int GENDER_WOMEN = 2;
+
+  /**
+   * 默认头像
+   */
+  // 男
+  public static final String AVATAR_MEN = "https://img.zcool.cn/community/01786557e4a6fa0000018c1bf080ca.png@1280w_1l_2o_100sh.png";
+  // 女
+  public static final String AVATAR_WOMEN = "https://img.zcool.cn/community/01650e57e4a6fa0000012e7e6eab80.png@1280w_1l_2o_100sh.png";
 
 }

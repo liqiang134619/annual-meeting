@@ -65,6 +65,8 @@ public final class Tools {
     }
     if (gender != null) {
       gender = gender % 2 == 0 ? Constant.GENDER_WOMEN : Constant.GENDER_MEN;
+    } else {
+      gender = Constant.GENDER_NONE;
     }
     return gender;
   }

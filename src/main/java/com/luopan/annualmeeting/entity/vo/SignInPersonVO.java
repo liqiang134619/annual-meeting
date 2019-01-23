@@ -32,6 +32,8 @@ public class SignInPersonVO implements Serializable {
 
   private String city;
 
+  private String cardNumber;
+
   private Date signInTime;
 
   private String companyName;

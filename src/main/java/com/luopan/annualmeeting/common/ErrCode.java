@@ -23,6 +23,7 @@ public enum ErrCode {
   PERSON_DELETE_ERROR(1059, "删除失败"),
   PERSON_FACE_SIGN_IN_ERROR(1060, "人脸识别签到失败"),
   PERSON_CARD_NUMBER_ERROR(1061, "身份证号不合法"),
+  PERSON_FACE_SIGN_IN_NOT_FOUND(1062, "未查询到人脸识别签到信息"),
 
   // 点赞 1101-1120
   HAD_PRAISE(1101, "重复点赞"),
