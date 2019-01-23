@@ -145,8 +145,7 @@ public class PersonService implements IPersonService {
 
     // 判断是否已签到
     List<Person> personList = personDao.findByExample(
-        BeanUtil.copyProperties(weChatCodeVO, PersonExampleVO.class)
-            .setOpenid(weChatAuthVO.getOpenid()));
+        new PersonExampleVO().setCompanyId(companyId).setOpenid(weChatAuthVO.getOpenid()));
     if (BeanUtil.isNotEmpty(personList)) {
       Person person = personList.get(0);
       SignInPersonVO signInPersonVO = BeanUtil.copyProperties(person, SignInPersonVO.class)
