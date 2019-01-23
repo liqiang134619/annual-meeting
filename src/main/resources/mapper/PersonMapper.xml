@@ -58,7 +58,7 @@
     <include refid="BaseSql"/>
     from person p
     where status = 1 and company_id = #{companyId} and
-    not exists (select 1 from lottery l, reward r where l.rewarrd_id = r.id and r.status = 1 and
+    not exists (select 1 from lottery l, reward r where l.reward_id = r.id and r.status = 1 and
     l.status = 1 and p.id = l.person_id and r.company_id = #{companyId})
   </select>
 
