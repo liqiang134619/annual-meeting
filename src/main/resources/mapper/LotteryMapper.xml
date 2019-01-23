@@ -97,4 +97,10 @@
     AND l.person_id = #{personId}
   </select>
 
+  <update id="empty" parameterType="long">
+    update lottery
+    set status = 0
+    where company_id = #{companyId} and status = 1
+  </update>
+
 </mapper>

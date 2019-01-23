@@ -25,4 +25,6 @@ public interface LotteryDao {
 
   int insertList(List<Lottery> list);
 
+  int empty(long companyId);
+
 }

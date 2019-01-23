@@ -145,4 +145,11 @@ public class LotteryService implements ILotteryService {
     lotteryDao.insertList(lotteryList);
     return ResultUtil.success();
   }
+
+  @Transactional
+  @Override
+  public RespMsg empty(Long companyId) {
+    lotteryDao.empty(companyId);
+    return ResultUtil.success();
+  }
 }

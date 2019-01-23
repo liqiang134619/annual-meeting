@@ -63,4 +63,12 @@ public class LotteryController {
     return lotteryService.save(rewardLotteryVO);
   }
 
+  @ApiOperation(value = "清空抽奖结果")
+  @RequestMapping(value = "/empty", method = RequestMethod.DELETE)
+  public RespMsg empty(HttpServletRequest request) {
+    log.info("**********清空抽奖结果***********");
+    Long companyId = Tools.getLongFromRequest(request, Constant.COMMON_PARAM_COMPANY_ID);
+    return lotteryService.empty(companyId);
+  }
+
 }

@@ -15,4 +15,6 @@ public interface ILotteryService {
 
   RespMsg save(RewardLotteryVO rewardLotteryVO);
 
+  RespMsg empty(Long companyId);
+
 }

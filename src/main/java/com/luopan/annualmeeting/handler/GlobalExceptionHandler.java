@@ -16,8 +16,7 @@ public class GlobalExceptionHandler {
   @ResponseBody
   public RespMsg exception(Exception e) {
     log.error("服务异常", e);
-    RespMsg<String> error = ResultUtil.error(ErrCode.SERVER_ERROR);
-    return error;
+    return ResultUtil.error(ErrCode.SERVER_ERROR);
   }
 
 }

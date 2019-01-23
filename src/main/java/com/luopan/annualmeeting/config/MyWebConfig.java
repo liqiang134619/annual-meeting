@@ -28,6 +28,7 @@ public class MyWebConfig implements WebMvcConfigurer {
   public void addInterceptors(InterceptorRegistry registry) {
     registry.addInterceptor(companyInterceptor()).addPathPatterns("/**")
         .excludePathPatterns("/user/login") // 登录
+        .excludePathPatterns("/person/faceSignIn") //人脸识别签到
         .excludePathPatterns("/swagger-resources/**", "/webjars/**", "/v2/**",
             "/swagger-ui.html/**"); // swagger
   }
