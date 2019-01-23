@@ -188,4 +188,21 @@ public class Constant {
   // 招行
   public static final long COMPANY_ID_ZH = 2;
 
+  /**
+   * 身份证号长度
+   */
+  // 一代
+  public static final int CARD_NUMBER_ONE_LENGTH = 15;
+  // 二代
+  public static final int CARD_NUMBER_TWO_LENGTH = 18;
+
+  /**
+   * 性别
+   */
+  // 男
+  public static final int GENDER_MEN = 1;
+
+  // 女
+  public static final int GENDER_WOMEN = 2;
+
 }

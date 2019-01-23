@@ -28,6 +28,7 @@ import com.luopan.annualmeeting.util.HttpUtil;
 import com.luopan.annualmeeting.util.JsonUtil;
 import com.luopan.annualmeeting.util.RedisUtil;
 import com.luopan.annualmeeting.util.ResultUtil;
+import com.luopan.annualmeeting.util.Tools;
 import com.luopan.annualmeeting.websocket.ServerManageWebSocket;
 import java.util.Arrays;
 import java.util.Collections;
@@ -57,16 +58,28 @@ public class PersonService implements IPersonService {
   @Override
   @Transactional
   public RespMsg faceSignIn(PersonFaceSignInVO personFaceSignInVO) {
-    Date now = new Date();
-    if (StringUtils.isEmpty(personFaceSignInVO.getName()) || StringUtils
-        .isEmpty(personFaceSignInVO.getAvatarUrl())) {
+    String name = personFaceSignInVO.getName();
+    String avatarUrl = personFaceSignInVO.getAvatarUrl();
+    String cardNumber = personFaceSignInVO.getCardNumber();
+    Date enterTime = personFaceSignInVO.getEnterTime();
+    if (StringUtils.isEmpty(name) || StringUtils.isEmpty(avatarUrl) || StringUtils
+        .isEmpty(cardNumber) || enterTime == null) {
       return ResultUtil.error(ErrCode.ILLEGAL_ARGUMENT);
     }
 
+    // 验证身份证合法性
+    if (cardNumber.length() != Constant.CARD_NUMBER_ONE_LENGTH
+        && cardNumber.length() != Constant.CARD_NUMBER_TWO_LENGTH) {
+      return ResultUtil.error(ErrCode.PERSON_CARD_NUMBER_ERROR);
+    }
+
+    // 从身份证中获取性别
+    Integer gender = Tools.getGenderFromCardNumber(cardNumber);
+
     Person person = BeanUtil.copyProperties(personFaceSignInVO, Person.class);
-    person.setNickname(personFaceSignInVO.getName()).setSpeakStatus(Status.ENABLE)
+    person.setNickname(name).setSpeakStatus(Status.ENABLE).setGender(gender)
         .setSignType(SignType.FACE_RECOGNITION).setCompanyId(Constant.COMPANY_ID_LP)
-        .setCreateTime(now).setUpdateTime(now).setStatus(Status.ENABLE);
+        .setCreateTime(enterTime).setUpdateTime(enterTime).setStatus(Status.ENABLE);
 
     int rows = personDao.insert(person);
     if (rows == 0) {

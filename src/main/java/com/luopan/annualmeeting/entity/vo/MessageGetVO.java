@@ -21,4 +21,6 @@ public class MessageGetVO implements Serializable {
 
   private Integer num;
 
+  private Long personId;
+
 }

@@ -90,15 +90,17 @@
     </if>
     order by m.create_time desc
   </select>
-  
+
   <select id="findById" parameterType="long" resultMap="BaseResultMap">
-    select <include refid="BaseSql"/>
+    select
+    <include refid="BaseSql"/>
     from message
     where id = #{id} and status = 1
   </select>
 
   <select id="findSelfMessages" resultMap="BaseResultMap" parameterType="long">
-    select <include refid="BaseSql"/>
+    select
+    <include refid="BaseSql"/>
     from message
     where status = 1 and person_id = #{personId}
     order by create_time
@@ -107,8 +109,9 @@
   <select id="findRefreshMessages" resultMap="MessageVO" parameterType="messageGetVO">
     select m.id, m.message, m.create_time as pub_time, p.name, p.nickname, p.avatar_url
     from message m
-    left join person p on m.person_id = p.id and p.company_id = #{companyId}
-    where m.status = 1 and p.status = 1 and m.check_status = 1
+    left join person p on m.person_id = p.id and m.company_id = #{companyId}
+    where m.status = 1 and p.status = 1 and (m.check_status = 1 or (m.check_status = 0 and
+    m.person_id = #{personId}))
     <if test="lastId != null">
       and m.id &gt; #{lastId}
     </if>
@@ -122,8 +125,9 @@
   <select id="findLoadMessages" resultMap="MessageVO" parameterType="messageGetVO">
     select m.id, m.message, m.create_time as pub_time, p.name, p.nickname, p.avatar_url
     from message m
-    left join person p on m.person_id = p.id and p.company_id = #{companyId}
-    where m.status = 1 and p.status = 1 and m.check_status = 1 and m.id &lt; #{lastId}
+    left join person p on m.person_id = p.id and m.company_id = #{companyId}
+    where m.status = 1 and p.status = 1 and m.id &lt; #{lastId}
+    and (m.check_status = 1 or (m.check_status = 0 and m.person_id = #{personId}))
     order by m.id desc
     limit 0, #{num}
   </select>

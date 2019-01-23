@@ -89,9 +89,12 @@ public class ServerManageWebSocket {
 
   private List<MessageVO> getFirstSendMessages() {
     int num = Tools
-        .getInt(redisUtil.getString(RedisKey.MESSAGE_TASK_NUM), Constant.MESSAGE_TASK_NUM);
+        .getInt(
+            redisUtil.getString(RedisKey.MESSAGE_TASK_NUM + Constant.SPLITTER_COLON + companyId),
+            Constant.MESSAGE_TASK_NUM);
     long offset = Tools
-        .getLong(redisUtil.getString(RedisKey.MESSAGE_OFFSET), Constant.MESSAGE_DEFAULT_OFFSET);
+        .getLong(redisUtil.getString(RedisKey.MESSAGE_OFFSET + Constant.SPLITTER_COLON + companyId),
+            Constant.MESSAGE_DEFAULT_OFFSET);
     offset -= num;
     if (offset < Constant.MESSAGE_DEFAULT_OFFSET) {
       offset = Constant.MESSAGE_DEFAULT_OFFSET;

@@ -146,7 +146,8 @@ public class MessageService implements IMessageService {
   @Override
   public RespMsg getMoreMessages(MessageGetVO messageGetVO) {
     String act = messageGetVO.getAct();
-    if (!Constant.ACT_LOAD.equals(act) && !Constant.ACT_REFRESH.equals(act)) {
+    if (!Constant.ACT_LOAD.equals(act) && !Constant.ACT_REFRESH.equals(act)
+        || messageGetVO.getPersonId() == null) {
       return ResultUtil.error(ErrCode.ILLEGAL_ARGUMENT);
     }
     messageGetVO.setNum(Constant.ACT_MESSAGE_NUM);
