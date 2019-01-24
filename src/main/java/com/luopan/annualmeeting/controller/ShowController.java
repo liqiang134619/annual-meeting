@@ -83,4 +83,12 @@ public class ShowController {
     return showService.delete(id);
   }
 
+  @ApiOperation(value = "查看节目投票")
+  @RequestMapping(value = "/vote", method = RequestMethod.GET)
+  public RespMsg vote(HttpServletRequest request) {
+    log.info("**************查看节目投票**************");
+    Long companyId = Tools.getLongFromRequest(request, Constant.COMMON_PARAM_COMPANY_ID);
+    return showService.vote(companyId);
+  }
+
 }

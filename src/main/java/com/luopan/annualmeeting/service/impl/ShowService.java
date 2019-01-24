@@ -194,4 +194,10 @@ public class ShowService implements IShowService {
     }
     return ResultUtil.success();
   }
+
+  @Override
+  public RespMsg vote(Long companyId) {
+    List<ShowVoteCountVO> list = findShowVoteCountVOList(companyId);
+    return ResultUtil.success(list);
+  }
 }

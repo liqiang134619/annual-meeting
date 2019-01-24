@@ -53,22 +53,4 @@ public final class Tools {
     }
     return getLong(stringValue);
   }
-
-  public static Integer getGenderFromCardNumber(String cardNumber) {
-    Integer gender = null;
-    if (cardNumber.length() == Constant.CARD_NUMBER_ONE_LENGTH) {
-      gender = getInt(cardNumber
-          .substring(Constant.CARD_NUMBER_ONE_LENGTH - 1, Constant.CARD_NUMBER_ONE_LENGTH));
-    } else if (cardNumber.length() == Constant.CARD_NUMBER_TWO_LENGTH) {
-      gender = getInt(cardNumber
-          .substring(Constant.CARD_NUMBER_TWO_LENGTH - 2, Constant.CARD_NUMBER_TWO_LENGTH - 1));
-    }
-    if (gender != null) {
-      gender = gender % 2 == 0 ? Constant.GENDER_WOMEN : Constant.GENDER_MEN;
-    } else {
-      gender = Constant.GENDER_NONE;
-    }
-    return gender;
-  }
-
 }

@@ -21,7 +21,7 @@ public interface PersonDao {
 
   Set<Long> findJoinGrandPrizePersonIds(long companyId);
 
-  long count(PersonExampleVO personExampleVO);
+  long countByExample(PersonExampleVO personExampleVO);
 
   List<Person> findByExample(PersonExampleVO personExampleVO);
 

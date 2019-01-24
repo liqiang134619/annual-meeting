@@ -1,6 +1,7 @@
 package com.luopan.annualmeeting.service;
 
 import com.luopan.annualmeeting.common.RespMsg;
+import com.luopan.annualmeeting.entity.vo.PersonEntryVO;
 import com.luopan.annualmeeting.entity.vo.PersonFaceSignInVO;
 import com.luopan.annualmeeting.entity.vo.PersonSearchVO;
 import com.luopan.annualmeeting.entity.vo.PersonSpeakStatusVO;
@@ -27,5 +28,7 @@ public interface IPersonService {
   RespMsg noLottery(Long companyId);
 
   RespMsg delete(Long id);
+
+  RespMsg add(PersonEntryVO personEntryVO);
 
 }

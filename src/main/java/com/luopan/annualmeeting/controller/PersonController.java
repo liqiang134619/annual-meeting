@@ -2,6 +2,7 @@ package com.luopan.annualmeeting.controller;
 
 import com.luopan.annualmeeting.common.Constant;
 import com.luopan.annualmeeting.common.RespMsg;
+import com.luopan.annualmeeting.entity.vo.PersonEntryVO;
 import com.luopan.annualmeeting.entity.vo.PersonFaceSignInVO;
 import com.luopan.annualmeeting.entity.vo.PersonSearchVO;
 import com.luopan.annualmeeting.entity.vo.PersonSpeakStatusVO;
@@ -81,6 +82,15 @@ public class PersonController {
   public RespMsg delete(@PathVariable Long id) {
     log.info("***********删除签到人员************");
     return personService.delete(id);
+  }
+
+  @ApiOperation(value = "手动录入签到人员")
+  @RequestMapping(value = "/add", method = RequestMethod.POST)
+  public RespMsg add(@RequestBody PersonEntryVO personEntryVO, HttpServletRequest request) {
+    log.info("***********手动录入签到人员************");
+    Long companyId = Tools.getLongFromRequest(request, Constant.COMMON_PARAM_COMPANY_ID);
+    personEntryVO.setCompanyId(companyId);
+    return personService.add(personEntryVO);
   }
 
 }

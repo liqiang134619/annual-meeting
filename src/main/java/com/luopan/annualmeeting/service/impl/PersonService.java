@@ -11,6 +11,7 @@ import com.luopan.annualmeeting.common.RespMsg;
 import com.luopan.annualmeeting.dao.PersonDao;
 import com.luopan.annualmeeting.entity.Company;
 import com.luopan.annualmeeting.entity.Person;
+import com.luopan.annualmeeting.entity.vo.PersonEntryVO;
 import com.luopan.annualmeeting.entity.vo.PersonExampleVO;
 import com.luopan.annualmeeting.entity.vo.PersonFaceSignInVO;
 import com.luopan.annualmeeting.entity.vo.PersonIdVO;
@@ -26,10 +27,10 @@ import com.luopan.annualmeeting.entity.vo.WebSocketMessageVO;
 import com.luopan.annualmeeting.service.IPersonService;
 import com.luopan.annualmeeting.util.BeanUtil;
 import com.luopan.annualmeeting.util.HttpUtil;
+import com.luopan.annualmeeting.util.IdcardUtil;
 import com.luopan.annualmeeting.util.JsonUtil;
 import com.luopan.annualmeeting.util.RedisUtil;
 import com.luopan.annualmeeting.util.ResultUtil;
-import com.luopan.annualmeeting.util.Tools;
 import com.luopan.annualmeeting.websocket.ServerManageWebSocket;
 import java.util.Arrays;
 import java.util.Collections;
@@ -67,14 +68,13 @@ public class PersonService implements IPersonService {
     }
 
     // 验证身份证合法性
-    if (cardNumber.length() != Constant.CARD_NUMBER_ONE_LENGTH
-        && cardNumber.length() != Constant.CARD_NUMBER_TWO_LENGTH) {
+    if (!IdcardUtil.isValidatedAllIdcard(cardNumber)) {
       return ResultUtil.error(ErrCode.PERSON_CARD_NUMBER_ERROR);
     }
 
     // 判断是否已签到
     long count = personDao
-        .count(
+        .countByExample(
             new PersonExampleVO().setCompanyId(Constant.COMPANY_ID_LP).setCardNumber(cardNumber));
     if (count != 0) {
       return ResultUtil.error(ErrCode.HAD_SIGN_IN);
@@ -82,7 +82,7 @@ public class PersonService implements IPersonService {
 
     // 从身份证中获取性别并设置头像
     String avatarUrl = Constant.AVATAR_MEN;
-    Integer gender = Tools.getGenderFromCardNumber(cardNumber);
+    Integer gender = IdcardUtil.getGenderFromIdcard(cardNumber);
     if (gender != null && gender == Constant.GENDER_WOMEN) {
       avatarUrl = Constant.AVATAR_WOMEN;
     }
@@ -171,8 +171,13 @@ public class PersonService implements IPersonService {
       if (BeanUtil.isEmpty(personList)) {
         return ResultUtil.error(ErrCode.PERSON_FACE_SIGN_IN_NOT_FOUND);
       }
-      // 更新用户信息
+
       Person person = personList.get(0);
+      if (!StringUtils.isEmpty(person.getOpenid())) {
+        return ResultUtil.error(ErrCode.PERSON_QR_CODE_HAD_BINDING);
+      }
+
+      // 更新用户信息
       person.setAvatarUrl(weChatUserInfoVO.getHeadimgurl())
           .setNickname(weChatUserInfoVO.getNickname()).setOpenid(weChatUserInfoVO.getOpenid())
           .setCountry(weChatUserInfoVO.getCountry()).setCity(weChatUserInfoVO.getCity())
@@ -278,6 +283,59 @@ public class PersonService implements IPersonService {
     if (rows == 0) {
       return ResultUtil.error(ErrCode.PERSON_DELETE_ERROR);
     }
+    return ResultUtil.success();
+  }
+
+  @Transactional
+  @Override
+  public RespMsg add(PersonEntryVO personEntryVO) {
+    Date now = new Date();
+
+    // 查询缓存中的企业
+    Long companyId = personEntryVO.getCompanyId();
+    Company company = redisUtil.hGet(RedisKey.COMPANY_MAP, companyId, Company.class);
+    if (company == null) {
+      return ResultUtil.error(ErrCode.ILLEGAL_ARGUMENT);
+    }
+
+    String cardNumber = personEntryVO.getCardNumber();
+    String name = personEntryVO.getName();
+    if (StringUtils.isEmpty(cardNumber) || StringUtils.isEmpty(name)) {
+      return ResultUtil.error(ErrCode.ILLEGAL_ARGUMENT);
+    }
+
+    // 验证身份证合法性
+    if (!IdcardUtil.isValidatedAllIdcard(cardNumber)) {
+      return ResultUtil.error(ErrCode.PERSON_CARD_NUMBER_ERROR);
+    }
+
+    long count = personDao
+        .countByExample(new PersonExampleVO().setCardNumber(cardNumber).setCompanyId(companyId));
+    if (count != 0) {
+      return ResultUtil.error(ErrCode.HAD_SIGN_IN);
+    }
+
+    // 设置性别和头像
+    Integer gender = IdcardUtil.getGenderFromIdcard(cardNumber);
+    String avatarUrl = Constant.AVATAR_MEN;
+    if (gender == Constant.GENDER_WOMEN) {
+      avatarUrl = Constant.AVATAR_WOMEN;
+    }
+
+    Person person = new Person();
+    person.setNickname(name).setName(name).setAvatarUrl(avatarUrl).setGender(gender)
+        .setCardNumber(cardNumber).setSignType(SignType.MANUAL_ENTRY).setSpeakStatus(Status.ENABLE)
+        .setCompanyId(companyId).setStatus(Status.ENABLE).setCreateTime(now)
+        .setUpdateTime(now);
+
+    personDao.insert(person);
+
+    SignInPersonVO signInPersonVO = BeanUtil.copyProperties(person, SignInPersonVO.class)
+        .setSignInTime(now).setCompanyName(company.getName());
+
+    // 推送签到消息
+    sendSignInSuccessMessage(signInPersonVO, companyId);
+
     return ResultUtil.success();
   }
 

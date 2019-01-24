@@ -27,4 +27,6 @@ public interface IShowService {
 
   RespMsg delete(Long id);
 
+  RespMsg vote(Long companyId);
+
 }
