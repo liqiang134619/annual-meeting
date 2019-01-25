@@ -64,9 +64,7 @@ public class PersonService implements IPersonService {
     String name = personFaceSignInVO.getName();
     String cardNumber = personFaceSignInVO.getCardNumber();
     Date enterTime = personFaceSignInVO.getEnterTime();
-    Integer lotteryNumber = personFaceSignInVO.getLotteryNumber();
-    if (StringUtils.isEmpty(name) || StringUtils.isEmpty(cardNumber) || enterTime == null
-        || lotteryNumber == null) {
+    if (StringUtils.isEmpty(name) || StringUtils.isEmpty(cardNumber) || enterTime == null) {
       return ResultUtil.error(ErrCode.ILLEGAL_ARGUMENT);
     }
 
