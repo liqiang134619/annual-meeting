@@ -14,6 +14,9 @@ public class PersonExampleVO {
 
   private String cardNumber;
 
+  // 身份证后六位
+  private String cardNumberLastSix;
+
   private String openid;
 
 }

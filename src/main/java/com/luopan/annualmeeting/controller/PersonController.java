@@ -2,6 +2,7 @@ package com.luopan.annualmeeting.controller;
 
 import com.luopan.annualmeeting.common.Constant;
 import com.luopan.annualmeeting.common.RespMsg;
+import com.luopan.annualmeeting.entity.vo.PersonBindingVO;
 import com.luopan.annualmeeting.entity.vo.PersonEntryVO;
 import com.luopan.annualmeeting.entity.vo.PersonFaceSignInVO;
 import com.luopan.annualmeeting.entity.vo.PersonSearchVO;
@@ -91,6 +92,15 @@ public class PersonController {
     Long companyId = Tools.getLongFromRequest(request, Constant.COMMON_PARAM_COMPANY_ID);
     personEntryVO.setCompanyId(companyId);
     return personService.add(personEntryVO);
+  }
+
+  @ApiOperation(value = "微信绑定人脸识别签到信息")
+  @RequestMapping(value = "/binding", method = RequestMethod.PUT)
+  public RespMsg binding(@RequestBody PersonBindingVO personBindingVO, HttpServletRequest request) {
+    log.info("***********微信绑定人脸识别签到信息************");
+    Long companyId = Tools.getLongFromRequest(request, Constant.COMMON_PARAM_COMPANY_ID);
+    personBindingVO.setCompanyId(companyId);
+    return personService.binding(personBindingVO);
   }
 
 }

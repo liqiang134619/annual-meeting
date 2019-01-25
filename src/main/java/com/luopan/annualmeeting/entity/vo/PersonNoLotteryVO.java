@@ -31,4 +31,6 @@ public class PersonNoLotteryVO implements Serializable {
 
   private String city;
 
+  private Integer lotteryNumber;
+
 }

@@ -29,4 +29,6 @@ public interface PersonDao {
 
   int updateSelective(Person person);
 
+  List<Integer> findAllLotteryNumbers(long companyId);
+
 }

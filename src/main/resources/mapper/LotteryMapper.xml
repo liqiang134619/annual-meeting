@@ -70,7 +70,7 @@
   </select>
 
   <select id="findLotteryPeople" resultMap="LotteryPersonRewardVO">
-    SELECT p.id, p.name, p.nickname, p.avatar_url, p.gender, p.phone, p.country,
+    SELECT p.id, p.name, p.nickname, p.avatar_url, p.gender, p.phone, p.country, p.lottery_number,
     p.province, p.city, r.id as reward_id, r.name as reward_name, r.level as reward_level,
     r.image_url as reward_image_url
     FROM lottery l

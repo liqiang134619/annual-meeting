@@ -16,4 +16,6 @@ public class WeChatCodeVO implements Serializable {
 
   private String cardNumber;
 
+  private Integer lotteryNumber;
+
 }

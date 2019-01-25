@@ -17,7 +17,11 @@ public class PersonFaceSignInVO {
 
   private String cardNumber;
 
+  private String avatarUrl;
+
   @DateTimeFormat(pattern = DateUtil.DATE_TIME_PATTERN)
   private Date enterTime;
+
+  private Integer lotteryNumber;
 
 }

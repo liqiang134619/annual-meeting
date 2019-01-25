@@ -11,10 +11,10 @@ import com.luopan.annualmeeting.common.RespMsg;
 import com.luopan.annualmeeting.dao.PersonDao;
 import com.luopan.annualmeeting.entity.Company;
 import com.luopan.annualmeeting.entity.Person;
+import com.luopan.annualmeeting.entity.vo.PersonBindingVO;
 import com.luopan.annualmeeting.entity.vo.PersonEntryVO;
 import com.luopan.annualmeeting.entity.vo.PersonExampleVO;
 import com.luopan.annualmeeting.entity.vo.PersonFaceSignInVO;
-import com.luopan.annualmeeting.entity.vo.PersonIdVO;
 import com.luopan.annualmeeting.entity.vo.PersonNoLotteryVO;
 import com.luopan.annualmeeting.entity.vo.PersonSearchVO;
 import com.luopan.annualmeeting.entity.vo.PersonSpeakStatusVO;
@@ -38,6 +38,7 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,7 +64,9 @@ public class PersonService implements IPersonService {
     String name = personFaceSignInVO.getName();
     String cardNumber = personFaceSignInVO.getCardNumber();
     Date enterTime = personFaceSignInVO.getEnterTime();
-    if (StringUtils.isEmpty(name) || StringUtils.isEmpty(cardNumber) || enterTime == null) {
+    Integer lotteryNumber = personFaceSignInVO.getLotteryNumber();
+    if (StringUtils.isEmpty(name) || StringUtils.isEmpty(cardNumber) || enterTime == null
+        || lotteryNumber == null) {
       return ResultUtil.error(ErrCode.ILLEGAL_ARGUMENT);
     }
 
@@ -81,24 +84,30 @@ public class PersonService implements IPersonService {
     }
 
     // 从身份证中获取性别并设置头像
-    String avatarUrl = Constant.AVATAR_MEN;
     Integer gender = IdcardUtil.getGenderFromIdcard(cardNumber);
-    if (gender != null && gender == Constant.GENDER_WOMEN) {
+    String avatarUrl = Constant.AVATAR_MEN;
+    if (gender == Constant.GENDER_WOMEN) {
       avatarUrl = Constant.AVATAR_WOMEN;
     }
 
     Person person = BeanUtil.copyProperties(personFaceSignInVO, Person.class);
     person.setNickname(name).setSpeakStatus(Status.ENABLE).setGender(gender).setAvatarUrl(avatarUrl)
-        .setSignType(SignType.FACE_RECOGNITION).setCompanyId(Constant.COMPANY_ID_LP)
-        .setCreateTime(enterTime).setUpdateTime(enterTime).setStatus(Status.ENABLE);
+        .setPhotoUrl(personFaceSignInVO.getAvatarUrl()).setSignType(SignType.FACE_RECOGNITION)
+        .setCompanyId(Constant.COMPANY_ID_LP).setCreateTime(enterTime).setUpdateTime(enterTime)
+        .setStatus(Status.ENABLE);
 
-    int rows = personDao.insert(person);
-    if (rows == 0) {
-      return ResultUtil.error(ErrCode.PERSON_FACE_SIGN_IN_ERROR);
+    personDao.insert(person);
+
+    // 推送签到信息
+    SignInPersonVO signInPersonVO = BeanUtil.copyProperties(person, SignInPersonVO.class)
+        .setSignInTime(enterTime);
+    Company company = redisUtil.hGet(RedisKey.COMPANY_MAP, Constant.COMPANY_ID_LP, Company.class);
+    if (company != null) {
+      signInPersonVO.setCompanyName(company.getName());
     }
+    sendSignInSuccessMessage(signInPersonVO, Constant.COMPANY_ID_LP);
 
-    PersonIdVO personIdVO = new PersonIdVO().setPersonId(person.getId());
-    return ResultUtil.success(personIdVO);
+    return ResultUtil.success();
   }
 
   @Override
@@ -165,9 +174,10 @@ public class PersonService implements IPersonService {
     }
 
     // 如果有身份证代表人脸识别签到
-    if (!StringUtils.isEmpty(weChatCodeVO.getCardNumber())) {
-      personList = personDao.findByExample(new PersonExampleVO().setCompanyId(companyId)
-          .setCardNumber(weChatCodeVO.getCardNumber()));
+    String cardNumber = weChatCodeVO.getCardNumber();
+    if (!StringUtils.isEmpty(cardNumber)) {
+      personList = personDao
+          .findByExample(new PersonExampleVO().setCompanyId(companyId).setCardNumber(cardNumber));
       if (BeanUtil.isEmpty(personList)) {
         return ResultUtil.error(ErrCode.PERSON_FACE_SIGN_IN_NOT_FOUND);
       }
@@ -193,6 +203,11 @@ public class PersonService implements IPersonService {
       return ResultUtil.success(signInPersonVO);
     }
 
+    // 如果是罗盘，但是没有扫纸质二维码的话就需要这步
+    if (companyId == Constant.COMPANY_ID_LP) {
+      return ResultUtil.error(ErrCode.NEED_CARD_NUMBER_LAST_SIX, weChatUserInfoVO);
+    }
+
     // 未签到
     Person person = new Person();
     person.setAvatarUrl(weChatUserInfoVO.getHeadimgurl()).setCity(weChatUserInfoVO.getCity())
@@ -208,13 +223,8 @@ public class PersonService implements IPersonService {
         .setCreateTime(now)
         .setUpdateTime(now)
         .setStatus(Status.ENABLE);
-    personDao.insert(person);
 
-    SignInPersonVO signInPersonVO = BeanUtil.copyProperties(person, SignInPersonVO.class)
-        .setSignInTime(now).setCompanyName(company.getName());
-
-    // 推送签到消息
-    sendSignInSuccessMessage(signInPersonVO, companyId);
+    SignInPersonVO signInPersonVO = saveAndSendSignInMessage(person, company);
 
     return ResultUtil.success(signInPersonVO);
   }
@@ -322,21 +332,97 @@ public class PersonService implements IPersonService {
       avatarUrl = Constant.AVATAR_WOMEN;
     }
 
+    // 生成抽奖号码
+    Integer lotteryNumber = generateLotteryNumber(companyId);
+    if (lotteryNumber == null) {
+      return ResultUtil.error(ErrCode.PERSON_LOTTERY_NUMBER_ERROR);
+    }
+
     Person person = new Person();
     person.setNickname(name).setName(name).setAvatarUrl(avatarUrl).setGender(gender)
         .setCardNumber(cardNumber).setSignType(SignType.MANUAL_ENTRY).setSpeakStatus(Status.ENABLE)
-        .setCompanyId(companyId).setStatus(Status.ENABLE).setCreateTime(now)
-        .setUpdateTime(now);
+        .setLotteryNumber(lotteryNumber).setCompanyId(companyId).setStatus(Status.ENABLE)
+        .setCreateTime(now).setUpdateTime(now);
 
-    personDao.insert(person);
+    SignInPersonVO signInPersonVO = saveAndSendSignInMessage(person, company);
 
+    return ResultUtil.success(signInPersonVO);
+  }
+
+  /**
+   * 生成抽奖号码
+   *
+   * @param companyId 企业id
+   */
+  private Integer generateLotteryNumber(Long companyId) {
+    if (companyId == null) {
+      return null;
+    }
+    List<Integer> existLotteryNumbers = Optional
+        .ofNullable(personDao.findAllLotteryNumbers(companyId))
+        .orElse(Collections.emptyList());
+    // 抽奖号码
+    int lotteryNumber;
+    long startRandomLotteryNumberTime = System.currentTimeMillis();
+    long lotteryNumberTime = 5 * 1000;
+    do {
+      // 防止死循环
+      if (System.currentTimeMillis() > startRandomLotteryNumberTime + lotteryNumberTime) {
+        return null;
+      }
+      lotteryNumber = new Random().nextInt(400) + 401;
+    } while (existLotteryNumbers.contains(lotteryNumber));
+    return lotteryNumber;
+  }
+
+  @Transactional
+  @Override
+  public RespMsg binding(PersonBindingVO personBindingVO) {
+    Date now = new Date();
+    String cardNumberLastSix = personBindingVO.getCardNumberLastSix();
+    String headimgurl = personBindingVO.getHeadimgurl();
+    String nickname = personBindingVO.getNickname();
+    String openid = personBindingVO.getOpenid();
+    if (StringUtils.isEmpty(cardNumberLastSix) || StringUtils.isEmpty(nickname) || StringUtils
+        .isEmpty(openid) || StringUtils.isEmpty(headimgurl)) {
+      return ResultUtil.error(ErrCode.ILLEGAL_ARGUMENT);
+    }
+
+    // 查询缓存中的企业
+    Long companyId = personBindingVO.getCompanyId();
+    Company company = redisUtil.hGet(RedisKey.COMPANY_MAP, companyId, Company.class);
+    if (company == null) {
+      return ResultUtil.error(ErrCode.ILLEGAL_ARGUMENT);
+    }
+
+    // 是否已存在数据
+    List<Person> personList = personDao.findByExample(
+        new PersonExampleVO().setCompanyId(personBindingVO.getCompanyId())
+            .setCardNumberLastSix(cardNumberLastSix));
+    if (BeanUtil.isEmpty(personList)) {
+      return ResultUtil.error(ErrCode.PERSON_FACE_SIGN_IN_NOT_FOUND);
+    }
+
+    Person person = personList.get(0);
+    person.setOpenid(openid).setNickname(nickname).setAvatarUrl(headimgurl)
+        .setCountry(personBindingVO.getCountry()).setCity(personBindingVO.getCity())
+        .setProvince(personBindingVO.getProvince()).setUpdateTime(now);
+    SignInPersonVO signInPersonVO = saveAndSendSignInMessage(person, company);
+
+    return ResultUtil.success(signInPersonVO);
+  }
+
+  // 存库并推送签到消息
+  private SignInPersonVO saveAndSendSignInMessage(Person person, Company company) {
+    if (person.getId() == null) {
+      personDao.insert(person);
+    } else {
+      personDao.updateSelective(person);
+    }
     SignInPersonVO signInPersonVO = BeanUtil.copyProperties(person, SignInPersonVO.class)
-        .setSignInTime(now).setCompanyName(company.getName());
-
-    // 推送签到消息
-    sendSignInSuccessMessage(signInPersonVO, companyId);
-
-    return ResultUtil.success();
+        .setCompanyName(company.getName()).setSignInTime(person.getCreateTime());
+    sendSignInSuccessMessage(signInPersonVO, company.getId());
+    return signInPersonVO;
   }
 
 }

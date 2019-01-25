@@ -13,9 +13,8 @@ public final class ResultUtil {
 
   /**
    * 成功并带有返回值
+   *
    * @param data 返回值
-   * @param <T>
-   * @return
    */
   public static <T> RespMsg<T> success(T data) {
     RespMsg<T> respMsg = new RespMsg<>();
@@ -27,7 +26,6 @@ public final class ResultUtil {
 
   /**
    * 成功不带返回值
-   * @return
    */
   public static RespMsg success() {
     RespMsg respMsg = new RespMsg();
@@ -39,14 +37,23 @@ public final class ResultUtil {
 
   /**
    * 失败
-   * @param errCode
-   * @return
    */
   public static RespMsg error(ErrCode errCode) {
     RespMsg respMsg = new RespMsg();
     respMsg.setErrCode(errCode.getErrCode());
     respMsg.setErrMsg(errCode.getErrMsg());
     respMsg.setData(Constant.EMPTY_STR);
+    return respMsg;
+  }
+
+  /**
+   * 失败带返回值
+   */
+  public static <T> RespMsg<T> error(ErrCode errCode, T data) {
+    RespMsg respMsg = new RespMsg();
+    respMsg.setErrCode(errCode.getErrCode());
+    respMsg.setErrMsg(errCode.getErrMsg());
+    respMsg.setData(data);
     return respMsg;
   }
 

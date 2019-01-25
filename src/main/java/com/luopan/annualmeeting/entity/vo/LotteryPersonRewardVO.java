@@ -28,6 +28,8 @@ public class LotteryPersonRewardVO implements Serializable {
 
   private String phone;
 
+  private Integer lotteryNumber;
+
   private Long rewardId;
 
   private String rewardName;

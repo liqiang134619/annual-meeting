@@ -38,4 +38,6 @@ public class SignInPersonVO implements Serializable {
 
   private String companyName;
 
+  private Integer lotteryNumber;
+
 }

@@ -50,6 +50,12 @@ public class Person extends BaseEntity {
   // 发言状态 1正常 0禁言
   private Integer speakStatus;
 
+  // 抽奖号码
+  private Integer lotteryNumber;
+
+  // 人脸识别照片
+  private String photoUrl;
+
   @Override
   public void fillDefaultProperty() {
     super.fillDefaultProperty();

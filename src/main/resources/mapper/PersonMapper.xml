@@ -18,6 +18,7 @@
     <result property="openid" column="OPENID" jdbcType="VARCHAR"/>
     <result property="companyId" column="COMPANY_ID" jdbcType="BIGINT"/>
     <result property="speakStatus" column="SPEAK_STATUS" jdbcType="INTEGER"/>
+    <result property="lotteryNumber" column="LOTTERY_NUMBER" jdbcType="INTEGER"/>
     <result property="createTime" column="CREATE_TIME" jdbcType="TIMESTAMP"/>
     <result property="updateTime" column="UPDATE_TIME" jdbcType="TIMESTAMP"/>
     <result property="status" column="STATUS" jdbcType="INTEGER"/>
@@ -39,12 +40,12 @@
   </resultMap>
 
   <sql id="BaseSql">
-    ID, NAME, NICKNAME, AVATAR_URL, GENDER, PHONE, COUNTRY, PROVINCE, CITY, CARD_NUMBER, SIGN_TYPE, OPENID, COMPANY_ID, SPEAK_STATUS, CREATE_TIME
+    ID, NAME, NICKNAME, AVATAR_URL, GENDER, PHONE, COUNTRY, PROVINCE, CITY, CARD_NUMBER, SIGN_TYPE, OPENID, COMPANY_ID, SPEAK_STATUS, LOTTERY_NUMBER, CREATE_TIME
   </sql>
 
   <insert id="insert" parameterType="person" useGeneratedKeys="true" keyProperty="id">
-    INSERT INTO person(NAME, NICKNAME, AVATAR_URL, GENDER, PHONE, COUNTRY, PROVINCE, CITY, card_number, SIGN_TYPE, OPENID, SPEAK_STATUS, COMPANY_ID, CREATE_TIME, UPDATE_TIME, STATUS)
-    VALUES (#{name}, #{nickname}, #{avatarUrl}, #{gender}, #{phone}, #{country}, #{province}, #{city}, #{cardNumber}, #{signType}, #{openid}, #{speakStatus}, #{companyId}, #{createTime}, #{updateTime}, #{status})
+    INSERT INTO person(NAME, NICKNAME, AVATAR_URL, GENDER, PHONE, COUNTRY, PROVINCE, CITY, card_number, SIGN_TYPE, OPENID, SPEAK_STATUS, LOTTERY_NUMBER, photo_url, COMPANY_ID, CREATE_TIME, UPDATE_TIME, STATUS)
+    VALUES (#{name}, #{nickname}, #{avatarUrl}, #{gender}, #{phone}, #{country}, #{province}, #{city}, #{cardNumber}, #{signType}, #{openid}, #{speakStatus}, #{lotteryNumber}, #{photoUrl}, #{companyId}, #{createTime}, #{updateTime}, #{status})
   </insert>
 
   <select id="findAll" resultMap="BaseResultMap" parameterType="long">
@@ -98,6 +99,9 @@
     <if test="cardNumber != null">
       and card_number = #{cardNumber}
     </if>
+    <if test="cardNumberLastSix != null">
+      and card_number like '%' || #{cardNumberLastSix}
+    </if>
     <if test="openid != null">
       and openid = #{openid}
     </if>
@@ -114,6 +118,12 @@
     <if test="speakStatus != null">
       and speak_status = #{speakStatus}
     </if>
+  </select>
+
+  <select id="findAllLotteryNumbers" resultType="int" parameterType="long">
+    select lottery_number
+    from person
+    where status = 1 and company_id = #{companyId}
   </select>
 
   <update id="updateSelective" parameterType="person">
