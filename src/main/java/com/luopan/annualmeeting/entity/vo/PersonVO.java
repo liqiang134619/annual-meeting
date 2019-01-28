@@ -31,6 +31,8 @@ public class PersonVO implements Serializable {
 
   private String cardNumber;
 
+  private Integer lotteryNumber;
+
   private Integer signType;
 
   private Integer speakStatus;

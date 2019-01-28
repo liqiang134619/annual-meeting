@@ -34,6 +34,8 @@
     <result property="country" column="COUNTRY" jdbcType="VARCHAR"/>
     <result property="province" column="PROVINCE" jdbcType="VARCHAR"/>
     <result property="city" column="CITY" jdbcType="VARCHAR"/>
+    <result property="cardNumber" column="CARD_NUMBER" jdbcType="VARCHAR"/>
+    <result property="lotteryNumber" column="LOTTERY_NUMBER" jdbcType="INTEGER"/>
     <result property="signType" column="SIGN_TYPE" jdbcType="INTEGER"/>
     <result property="speakStatus" column="SPEAK_STATUS" jdbcType="INTEGER"/>
     <result property="signTime" column="SIGN_TIME" jdbcType="TIMESTAMP"/>
@@ -59,7 +61,7 @@
     select
     <include refid="BaseSql"/>
     from person p
-    where status = 1 and company_id = #{companyId} and
+    where status = 1 and company_id = #{companyId} and practice = 0 and
     not exists (select 1 from lottery l, reward r where l.reward_id = r.id and r.status = 1 and
     l.status = 1 and p.id = l.person_id and r.company_id = #{companyId})
   </select>
@@ -90,7 +92,8 @@
   </select>
 
   <select id="findByExample" resultMap="BaseResultMap" parameterType="personExampleVO">
-    select <include refid="BaseSql"/>
+    select
+    <include refid="BaseSql"/>
     from person
     where status = 1
     <if test="companyId != null">
@@ -108,8 +111,8 @@
   </select>
 
   <select id="search" resultMap="PersonVO" parameterType="personSearchVO">
-    select id, name, nickname, avatar_url, gender, phone, country, province, city, card_number, sign_type,
-    speak_status, create_time as sign_time
+    select id, name, nickname, avatar_url, gender, phone, country, province, city, card_number,
+    lottery_number, sign_type, speak_status, create_time as sign_time
     from person
     where status = 1 and company_id = #{companyId}
     <if test="name != null and name != ''">

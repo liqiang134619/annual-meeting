@@ -43,6 +43,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
@@ -59,7 +60,6 @@ public class PersonService implements IPersonService {
   private ServerManageWebSocket serverManageWebSocket;
 
   @Override
-  @Transactional
   public RespMsg faceSignIn(PersonFaceSignInVO personFaceSignInVO) {
     String name = personFaceSignInVO.getName();
     String cardNumber = personFaceSignInVO.getCardNumber();
@@ -73,28 +73,20 @@ public class PersonService implements IPersonService {
       return ResultUtil.error(ErrCode.PERSON_CARD_NUMBER_ERROR);
     }
 
+    // 过滤测试记录
+    if ("32128219900201541X".equals(cardNumber) || "肖健".equals(name)) {
+      return ResultUtil.error(ErrCode.ILLEGAL_ARGUMENT);
+    }
+
     // 判断是否已签到
-    long count = personDao
-        .countByExample(
-            new PersonExampleVO().setCompanyId(Constant.COMPANY_ID_LP).setCardNumber(cardNumber));
-    if (count != 0) {
+    Person person;
+    // 锁住同一身份证
+    synchronized (cardNumber.intern()) {
+      person = insertPersonNotExists(personFaceSignInVO);
+    }
+    if (person == null) {
       return ResultUtil.error(ErrCode.HAD_SIGN_IN);
     }
-
-    // 从身份证中获取性别并设置头像
-    Integer gender = IdcardUtil.getGenderFromIdcard(cardNumber);
-    String avatarUrl = Constant.AVATAR_MEN;
-    if (gender == Constant.GENDER_WOMEN) {
-      avatarUrl = Constant.AVATAR_WOMEN;
-    }
-
-    Person person = BeanUtil.copyProperties(personFaceSignInVO, Person.class);
-    person.setNickname(name).setSpeakStatus(Status.ENABLE).setGender(gender).setAvatarUrl(avatarUrl)
-        .setPhotoUrl(personFaceSignInVO.getAvatarUrl()).setSignType(SignType.FACE_RECOGNITION)
-        .setCompanyId(Constant.COMPANY_ID_LP).setCreateTime(enterTime).setUpdateTime(enterTime)
-        .setStatus(Status.ENABLE);
-
-    personDao.insert(person);
 
     // 推送签到信息
     SignInPersonVO signInPersonVO = BeanUtil.copyProperties(person, SignInPersonVO.class)
@@ -106,6 +98,35 @@ public class PersonService implements IPersonService {
     sendSignInSuccessMessage(signInPersonVO, Constant.COMPANY_ID_LP);
 
     return ResultUtil.success();
+  }
+
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public Person insertPersonNotExists(PersonFaceSignInVO personFaceSignInVO) {
+    String cardNumber = personFaceSignInVO.getCardNumber();
+    long count = personDao
+        .countByExample(
+            new PersonExampleVO().setCompanyId(Constant.COMPANY_ID_LP).setCardNumber(cardNumber));
+    if (count != 0) {
+      return null;
+    }
+
+    // 从身份证中获取性别并设置头像
+    Integer gender = IdcardUtil.getGenderFromIdcard(cardNumber);
+    String avatarUrl = Constant.AVATAR_MEN;
+    if (gender == Constant.GENDER_WOMEN) {
+      avatarUrl = Constant.AVATAR_WOMEN;
+    }
+
+    Person person = BeanUtil.copyProperties(personFaceSignInVO, Person.class);
+    person.setNickname(personFaceSignInVO.getName()).setSpeakStatus(Status.ENABLE).setGender(gender)
+        .setAvatarUrl(avatarUrl)
+        .setPhotoUrl(personFaceSignInVO.getAvatarUrl()).setSignType(SignType.FACE_RECOGNITION)
+        .setCompanyId(Constant.COMPANY_ID_LP).setCreateTime(personFaceSignInVO.getEnterTime())
+        .setUpdateTime(personFaceSignInVO.getEnterTime())
+        .setStatus(Status.ENABLE);
+
+    personDao.insert(person);
+    return person;
   }
 
   @Override
