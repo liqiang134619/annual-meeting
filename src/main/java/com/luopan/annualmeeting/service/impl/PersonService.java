@@ -440,7 +440,7 @@ public class PersonService implements IPersonService {
     }
     SignInPersonVO signInPersonVO = BeanUtil.copyProperties(person, SignInPersonVO.class)
         .setCompanyName(company.getName()).setSignInTime(person.getCreateTime());
-    sendSignInSuccessMessage(signInPersonVO, company.getId());
+    sendSignInSuccessMessage(signInPersonVO, company.getCompanyId());
     return signInPersonVO;
   }
 

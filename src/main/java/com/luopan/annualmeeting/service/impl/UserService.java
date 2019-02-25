@@ -37,7 +37,7 @@ public class UserService implements IUserService {
     if (company == null) {
       return ResultUtil.error(ErrCode.COMPANY_NOT_FOUND);
     }
-    UserCompanyVO userCompanyVO = new UserCompanyVO().setCompanyId(company.getId())
+    UserCompanyVO userCompanyVO = new UserCompanyVO().setCompanyId(company.getCompanyId())
         .setCompanyName(company.getName());
     return ResultUtil.success(userCompanyVO);
   }
