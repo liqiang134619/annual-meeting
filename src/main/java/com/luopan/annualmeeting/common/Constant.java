@@ -161,7 +161,7 @@ public class Constant {
   /**
    * 通用分隔符
    */
-  public static final String SPLITTER_COLON = ":";
+  public static final String  SPLITTER_COLON = ":";
   public static final String SPLITTER_COMMA = ",";
   public static final String SPLITTER_SEMICOLON = ";";
 

@@ -11,8 +11,14 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class RewardLotteryVO {
 
+  /**
+   * 奖品id
+   */
   private Long rewardId;
 
+  /**
+   * 中奖人员id
+   */
   private List<Long> personIds;
 
   private Long companyId;

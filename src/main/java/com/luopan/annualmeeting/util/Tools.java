@@ -43,6 +43,12 @@ public final class Tools {
     return num;
   }
 
+  /**
+   * header中获取公司名称
+   * @param request
+   * @param name
+   * @return
+   */
   public static Long getLongFromRequest(HttpServletRequest request, String name) {
     if (request == null) {
       return null;
