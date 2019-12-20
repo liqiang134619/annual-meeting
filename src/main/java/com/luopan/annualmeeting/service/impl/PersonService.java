@@ -41,6 +41,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -48,6 +49,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 @Service
+@Slf4j
 public class PersonService implements IPersonService {
 
   @Autowired
@@ -156,7 +158,9 @@ public class PersonService implements IPersonService {
 
     // 查询缓存中的企业
     Long companyId = weChatCodeVO.getCompanyId();
+    log.debug("【==> companyId：{}】",companyId);
     Company company = redisUtil.hGet(RedisKey.COMPANY_MAP, companyId, Company.class);
+    log.debug("【==> company：{}】",company);
     if (company == null) {
       return ResultUtil.error(ErrCode.ILLEGAL_ARGUMENT);
     }

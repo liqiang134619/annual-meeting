@@ -25,6 +25,7 @@ public class ShowVoteJob implements Job {
 
   @Override
   public void execute(JobExecutionContext jobExecutionContext) {
+    log.debug("【==> 推送投票信息】");
     String jobName = jobExecutionContext.getJobDetail().getKey().getName();
     String[] array = jobName.split(Constant.SPLITTER_COLON);
     Long companyId = Tools.getLong(array[1]);

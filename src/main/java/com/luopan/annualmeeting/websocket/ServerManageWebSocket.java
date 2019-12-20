@@ -79,6 +79,7 @@ public class ServerManageWebSocket {
       sendMessageTo(JsonUtil.obj2String(webSocketMessageVO), session);
     }
     // 留言墙
+    log.info("【==> 开始推送留言】");
     List<MessageVO> firstSendMessageList = getFirstSendMessages();
     if (BeanUtil.isNotEmpty(firstSendMessageList)) {
       WebSocketMessageVO<List<MessageVO>> webSocketMessageVO = new WebSocketMessageVO<>(
