@@ -1,0 +1,29 @@
+server:
+  port: 19010
+spring:
+  ##########################  mysql   ##########################
+  datasource:
+    url: jdbc:mysql://61.155.157.42:13306/annual_meeting?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false
+    username: tmc
+    password: tmc
+    driver-class-name: com.mysql.jdbc.Driver
+
+  ##########################  redis配置   ##########################
+  redis:
+    database: 0
+    host: 61.155.157.42
+    port: 6382
+    password: tE2-WJZ-u5F-6UJ
+    jedis:
+      pool:
+        # 连接池最大连接数（使用负值表示没有限制）
+        max-active: 8
+        # 连接池最大阻塞等待时间（使用负值表示没有限制）
+        max-wait: -1
+        # 连接池中的最大空闲连接
+        max-idle: 8
+        # 连接池中的最小空闲连接
+        min-idle: 0
+    # 连接超时时间（毫秒）
+    timeout: 1000
+

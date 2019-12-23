@@ -55,6 +55,11 @@ public class ServerManageWebSocket {
 
   private static RedisUtil redisUtil;
 
+  /**
+   * websocket对象链接服务，向客户端开始推送消息（签到人员信息，投票信息，人员评论消息）
+   * @param companyId 链接路径传递的id值
+   * @param session 当前链接对象的session
+   */
   @OnOpen
   public void onOpen(@PathParam("companyId") Long companyId, Session session) {
     log.info("后台管理当前连接数：" + count.incrementAndGet());
@@ -64,7 +69,7 @@ public class ServerManageWebSocket {
     websocketMap
         .computeIfAbsent(companyId, compId -> new CopyOnWriteArraySet<>()).add(this);
 
-    // 已签到人员
+    // 已签到人员 websocket连接时推送一次
     List<SignInPersonVO> signInPersonList = personService.findSignInPersonList(companyId);
     if (BeanUtil.isNotEmpty(signInPersonList)) {
       WebSocketMessageVO<List<SignInPersonVO>> webSocketMessageVO = new WebSocketMessageVO<>(
@@ -79,7 +84,6 @@ public class ServerManageWebSocket {
       sendMessageTo(JsonUtil.obj2String(webSocketMessageVO), session);
     }
     // 留言墙
-    log.info("【==> 开始推送留言】");
     List<MessageVO> firstSendMessageList = getFirstSendMessages();
     if (BeanUtil.isNotEmpty(firstSendMessageList)) {
       WebSocketMessageVO<List<MessageVO>> webSocketMessageVO = new WebSocketMessageVO<>(

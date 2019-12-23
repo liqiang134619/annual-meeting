@@ -54,11 +54,11 @@
     </dependency>
 
     <!-- druid -->
-    <dependency>
-      <groupId>com.alibaba</groupId>
-      <artifactId>druid</artifactId>
-      <version>${druid.version}</version>
-    </dependency>
+<!--    <dependency>-->
+<!--      <groupId>com.alibaba</groupId>-->
+<!--      <artifactId>druid</artifactId>-->
+<!--      <version>${druid.version}</version>-->
+<!--    </dependency>-->
 
     <!-- mysql -->
     <dependency>
@@ -66,11 +66,11 @@
       <artifactId>mysql-connector-java</artifactId>
     </dependency>
 
-    <!--<dependency>-->
-      <!--<groupId>com.alibaba</groupId>-->
-      <!--<artifactId>druid-spring-boot-starter</artifactId>-->
-      <!--<version>1.1.16</version>-->
-    <!--</dependency>-->
+    <dependency>
+      <groupId>com.alibaba</groupId>
+      <artifactId>druid-spring-boot-starter</artifactId>
+      <version>1.1.16</version>
+    </dependency>
 
     <!-- lombok -->
     <dependency>
@@ -119,48 +119,84 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <!--linux service服务启动-->
+          <executable>true</executable>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!--mvn install时跳过test-->
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>package</id>
+            <phase>package</phase> <!--表示插件要在Maven 的 package 时执行-->
+            <configuration>
+              <!--打包完成后,把构建结果复制到其他位置-->
+              <target>
+                <echo message="copy ${project.artifactId}.jar to deploy dir"/>
+                <copy file="${basedir}/target/${project.artifactId}.jar"
+                      tofile="./deploy/${project.artifactId}.jar"
+                      overwrite="true"/>
+              </target>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
+    <finalName>${project.artifactId}</finalName>
 
     <!-- profile对资源的操作 -->
-    <resources>
-      <resource>
-        <directory>src/main/resources</directory>
-        <excludes>
-          <exclude>application*.properties</exclude>
-        </excludes>
-      </resource>
-      <resource>
-        <directory>src/main/resources</directory>
-        <!-- 是否替换@xx@表示的maven properties属性值 -->
-        <filtering>true</filtering>
-        <includes>
-          <include>application.properties</include>
-          <include>application-${profiles.active}.properties</include>
-        </includes>
-      </resource>
-    </resources>
+<!--    <resources>-->
+<!--      <resource>-->
+<!--        <directory>src/main/resources</directory>-->
+<!--        <excludes>-->
+<!--          <exclude>application*.properties</exclude>-->
+<!--        </excludes>-->
+<!--      </resource>-->
+<!--      <resource>-->
+<!--        <directory>src/main/resources</directory>-->
+<!--        &lt;!&ndash; 是否替换@xx@表示的maven properties属性值 &ndash;&gt;-->
+<!--        <filtering>true</filtering>-->
+<!--        <includes>-->
+<!--          <include>application.properties</include>-->
+<!--          <include>application-${profiles.active}.properties</include>-->
+<!--        </includes>-->
+<!--      </resource>-->
+<!--    </resources>-->
   </build>
 
-  <profiles>
-    <profile>
-      <!-- 本地开发环境 -->
-      <id>dev</id>
-      <properties>
-        <profiles.active>dev</profiles.active>
-      </properties>
-      <activation>
-        <!-- 设置默认激活这个配置 -->
-        <activeByDefault>true</activeByDefault>
-      </activation>
-    </profile>
-    <profile>
-      <!-- 发布环境 -->
-      <id>prod</id>
-      <properties>
-        <profiles.active>prod</profiles.active>
-      </properties>
-    </profile>
-  </profiles>
+<!--  <profiles>-->
+<!--    <profile>-->
+<!--      &lt;!&ndash; 本地开发环境 &ndash;&gt;-->
+<!--      <id>dev</id>-->
+<!--      <properties>-->
+<!--        <profiles.active>dev</profiles.active>-->
+<!--      </properties>-->
+<!--      <activation>-->
+<!--        &lt;!&ndash; 设置默认激活这个配置 &ndash;&gt;-->
+<!--        <activeByDefault>true</activeByDefault>-->
+<!--      </activation>-->
+<!--    </profile>-->
+<!--    <profile>-->
+<!--      &lt;!&ndash; 发布环境 &ndash;&gt;-->
+<!--      <id>prod</id>-->
+<!--      <properties>-->
+<!--        <profiles.active>prod</profiles.active>-->
+<!--      </properties>-->
+<!--    </profile>-->
+<!--  </profiles>-->
 
 </project>
