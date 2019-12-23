@@ -31,6 +31,7 @@ public class MessageJob implements Job {
 
   @Override
   public void execute(JobExecutionContext jobExecutionContext) {
+//    log.info("【==>  消息上墙定时任务推送】");
     String jobName = jobExecutionContext.getJobDetail().getKey().getName();
     String[] array = jobName.split(Constant.SPLITTER_COLON);
     Long companyId = Tools.getLong(array[1]);

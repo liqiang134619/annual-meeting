@@ -179,6 +179,7 @@ public class PersonService implements IPersonService {
     List<Person> personList = personDao.findByExample(
         new PersonExampleVO().setCompanyId(companyId).setOpenid(weChatAuthVO.getOpenid()));
     if (BeanUtil.isNotEmpty(personList)) {
+      log.info("【==> 用户已签到：{}】",personList.get(0).getName());
       Person person = personList.get(0);
       SignInPersonVO signInPersonVO = BeanUtil.copyProperties(person, SignInPersonVO.class)
           .setSignInTime(person.getCreateTime()).setCompanyName(company.getName());
@@ -423,7 +424,7 @@ public class PersonService implements IPersonService {
         new PersonExampleVO().setCompanyId(personBindingVO.getCompanyId())
             .setCardNumberLastSix(cardNumberLastSix));
     if (BeanUtil.isEmpty(personList)) {
-      return ResultUtil.error(ErrCode.PERSON_FACE_SIGN_IN_NOT_FOUND);
+      return ResultUtil.error(ErrCode.PERSON_NOT_FOUND);
     }
 
     Person person = personList.get(0);

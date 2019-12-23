@@ -24,6 +24,7 @@ public enum ErrCode {
   PERSON_FACE_SIGN_IN_ERROR(1060, "人脸识别签到失败"),
   PERSON_CARD_NUMBER_ERROR(1061, "身份证不合法"),
   PERSON_FACE_SIGN_IN_NOT_FOUND(1062, "未查询到人脸识别签到信息"),
+  PERSON_NOT_FOUND(1066, "未查询到人员身份信息"),
   PERSON_QR_CODE_HAD_BINDING(1063, "二维码已被绑定"),
   PERSON_LOTTERY_NUMBER_ERROR(1064, "生成随机抽奖号码失败"),
   NEED_CARD_NUMBER_LAST_SIX(1065, "需要输入身份证后六位"),
